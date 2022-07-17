@@ -18,7 +18,7 @@ export function key() {
   );
 }
 
-export type State = {
+export type WithSession = {
   session: Session;
 };
 

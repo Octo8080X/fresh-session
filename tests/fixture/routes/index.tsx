@@ -1,8 +1,14 @@
 /** @jsx h */
 import { h } from "preact";
-import { Handlers } from "$fresh/server.ts";
+import { Handlers, PageProps } from "$fresh/server.ts";
+import type { WithSession } from "fresh-session";
 
-export const handler: Handlers = {
+export type Data = { session: Record<string, string> };
+
+export const handler: Handlers<
+  Data,
+  WithSession
+> = {
   GET(_req, ctx) {
     const { session } = ctx.state;
 
@@ -26,7 +32,7 @@ export const handler: Handlers = {
   },
 };
 
-export default function Home({ data }) {
+export default function Home({ data }: PageProps<Data>) {
   return (
     <main>
       <section>

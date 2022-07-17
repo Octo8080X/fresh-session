@@ -18,55 +18,76 @@ export function key() {
 }
 
 export type State = {
-  session: CookieSession;
+  session: Session;
 };
 
-export class CookieSession {
-  #id: string;
-  #data = {};
+export function createCookieSessionStorage() {
+  return CookieSessionStorage.init();
+}
 
-  constructor(id: string, data = {}) {
-    this.#id = id;
-    this.#data = data;
+export class CookieSessionStorage {
+  #key: CryptoKey;
+
+  constructor(key: CryptoKey) {
+    this.#key = key;
   }
 
-  get id() {
-    return this.#id;
+  static async init() {
+    return new this(await key());
+  }
+
+  create() {
+    return new Session();
+  }
+
+  exists(sessionId: string) {
+    return verify(sessionId, this.#key);
+  }
+
+  get(sessionId: string) {
+    const [, payload] = decode(sessionId);
+    return new Session(payload as object);
+  }
+
+  async persist(response: Response, session: Session) {
+    setCookie(response.headers, {
+      name: "sessionId",
+      value: await create(
+        { alg: "HS512", typ: "JWT" },
+        { ...session.data },
+        this.#key,
+      ),
+    });
+
+    return response;
+  }
+}
+export class Session {
+  #data: Record<string, string> = {};
+
+  constructor(data = {}) {
+    this.#data = data;
   }
 
   get data() {
     return this.#data;
   }
 
-  set data(value) {
-    this.#data = value;
+  set(key: string, value: string) {
+    this.#data[key] = value;
+
+    return this;
   }
 
-  static create() {
-    return new this("", {});
+  get(key: string) {
+    return this.#data[key];
   }
 
-  static async exists(id: string) {
-    return verify(id, await key());
-  }
+  // TODO
+  flash() {}
 
-  static get(id: string) {
-    const [, payload] = decode(id);
-    return new this(id, payload as object);
-  }
-
-  async persist(response: Response) {
-    setCookie(response.headers, {
-      name: "sessionId",
-      value: await create(
-        { alg: "HS512", typ: "JWT" },
-        { ...this.#data },
-        await key(),
-      ),
-    });
-
-    return response;
-  }
+  // TODO
+  destroy() {}
 }
 
 export async function handler(
@@ -74,15 +95,19 @@ export async function handler(
   ctx: MiddlewareHandlerContext<State>,
 ) {
   const { sessionId } = getCookies(req.headers);
-  if (sessionId && (await CookieSession.exists(sessionId))) {
-    ctx.state.session = await CookieSession.get(sessionId);
+  const cookieSessionStorage = await createCookieSessionStorage();
+
+  if (
+    sessionId && (await cookieSessionStorage.exists(sessionId))
+  ) {
+    ctx.state.session = await cookieSessionStorage.get(sessionId);
   }
 
   if (!ctx.state.session) {
-    ctx.state.session = new CookieSession(sessionId);
+    ctx.state.session = cookieSessionStorage.create();
   }
 
   const response = await ctx.next();
 
-  return ctx.state.session.persist(response);
+  return cookieSessionStorage.persist(response, ctx.state.session);
 }

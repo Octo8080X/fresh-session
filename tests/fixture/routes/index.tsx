@@ -12,9 +12,10 @@ export const handler: Handlers = {
   async POST(req, ctx) {
     const formData = await req.formData();
 
-    ctx.state.session.data = {
-      email: formData.get("email"),
-    };
+    // ctx.state.session.data = {
+    //   email: formData.get("email"),
+    // };
+    ctx.state.session.set("email", formData.get("email"));
 
     return new Response(null, {
       status: 303,

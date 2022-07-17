@@ -66,7 +66,7 @@ export class CookieSessionStorage {
 
 export async function cookieSession(
   req: Request,
-  ctx: MiddlewareHandlerContext<State>,
+  ctx: MiddlewareHandlerContext<WithSession>,
 ) {
   const { sessionId } = getCookies(req.headers);
   const cookieSessionStorage = await createCookieSessionStorage();

@@ -37,7 +37,10 @@ blogpost is on the way on [my blog](https://xstevenyung.com)
 
 ```ts
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { cookieSession WithSession } from "https://deno.land/x/fresh_session@0.1.2";
+import {
+  cookieSession,
+  WithSession,
+} from "https://deno.land/x/fresh_session@0.1.2";
 
 export type State = WithSession;
 

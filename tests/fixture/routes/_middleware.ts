@@ -1,8 +1,8 @@
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { CookieSession, handler as sessionHandler } from "fresh-session";
+import { handler as sessionHandler, Session } from "fresh-session";
 
 export type State = {
-  session: CookieSession;
+  session: Session;
 };
 
 export function handler(

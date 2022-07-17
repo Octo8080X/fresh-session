@@ -5,7 +5,8 @@ import {
   MiddlewareHandlerContext,
   setCookie,
   verify,
-} from "./deps.ts";
+} from "../deps.ts";
+import { Session } from "../session.ts";
 
 export function key() {
   return crypto.subtle.importKey(
@@ -61,33 +62,6 @@ export class CookieSessionStorage {
 
     return response;
   }
-}
-export class Session {
-  #data: Record<string, string> = {};
-
-  constructor(data = {}) {
-    this.#data = data;
-  }
-
-  get data() {
-    return this.#data;
-  }
-
-  set(key: string, value: string) {
-    this.#data[key] = value;
-
-    return this;
-  }
-
-  get(key: string) {
-    return this.#data[key];
-  }
-
-  // TODO
-  flash() {}
-
-  // TODO
-  destroy() {}
 }
 
 export async function handler(

@@ -16,7 +16,12 @@ export const handler: Handlers = {
       email: formData.get("email"),
     };
 
-    return new Response(null, { status: 204 });
+    return new Response(null, {
+      status: 303,
+      headers: {
+        "Location": "/",
+      },
+    });
   },
 };
 

@@ -7,21 +7,33 @@ Dead simple cookie-based session for [Deno Fresh](https://fresh.deno.dev).
 Fresh Session comes with a simple middleware to add at the root of your project,
 which will create or resolve a session from the request cookie.
 
+### Install / Import
+
+You can import Fresh Session like so:
+
+```ts
+import {
+  cookieSession,
+  createCookieSessionStorage,
+  CookieSessionStorage
+  WithSession,
+  Session,
+} from "https://deno.land/x/fresh_session@0.1.1";
+```
+
 ### Create a root middleware (`./routes/_middleware.ts`)
 
 ```ts
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { handler as sessionHandler, Session } from "fresh-session";
+import { cookieSession WithSession } from "https://deno.land/x/fresh_session@0.1.1";
 
-export type State = {
-  session: Session;
-};
+export type State = WithSession;
 
 export function handler(
   req: Request,
   ctx: MiddlewareHandlerContext<State>,
 ) {
-  return sessionHandler(req, ctx);
+  return cookieSession(req, ctx);
 }
 ```
 
@@ -39,7 +51,7 @@ interacting with your session.
 /** @jsx h */
 import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { WithSession } from "fresh-session";
+import { WithSession } from "https://deno.land/x/fresh_session@0.1.1";
 
 export type Data = { session: Record<string, string> };
 

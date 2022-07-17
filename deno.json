@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "fixture": "deno run -A --watch=static/,routes/ tests/fixture/dev.ts"
+  },
+  "importMap": "./tests/fixture/import_map.json"
+}

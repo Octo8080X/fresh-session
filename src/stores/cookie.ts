@@ -64,7 +64,7 @@ export class CookieSessionStorage {
   }
 }
 
-export async function handler(
+export async function cookieSession(
   req: Request,
   ctx: MiddlewareHandlerContext<State>,
 ) {

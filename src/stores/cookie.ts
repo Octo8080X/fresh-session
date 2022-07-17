@@ -9,9 +9,17 @@ import {
 import { Session } from "../session.ts";
 
 export function key() {
+  const key = Deno.env.get("APP_KEY");
+
+  if (!key) {
+    console.warn(
+      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue.",
+    );
+  }
+
   return crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(Deno.env.get("APP_KEY")),
+    new TextEncoder().encode(key || "not-secret"),
     { name: "HMAC", hash: "SHA-512" },
     false,
     ["sign", "verify"],

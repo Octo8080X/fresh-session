@@ -21,6 +21,18 @@ import {
 } from "https://deno.land/x/fresh_session@0.1.1";
 ```
 
+### Setup secret key
+
+Fresh Session currently use [JSON Web Token](https://jwt.io/) under the hood to
+create and manage session in the cookies.
+
+JWT requires to have a secret key to encrypt new token. Fresh Session use the
+session from your [environment variable](https://deno.land/std/dotenv/load.ts)
+`APP_KEY`.
+
+If you don't know how to setup environment variable locally or on Deno Deploy, a
+blogpost is on the way on [my blog](https://xstevenyung.com)
+
 ### Create a root middleware (`./routes/_middleware.ts`)
 
 ```ts

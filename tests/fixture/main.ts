@@ -6,5 +6,4 @@
 
 import { start } from "$fresh/server.ts";
 import manifest from "./fresh.gen.ts";
-Deno.env.set("APP_KEY", "not-secret");
 await start(manifest);

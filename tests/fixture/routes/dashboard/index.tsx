@@ -24,8 +24,6 @@ export const handler: Handlers<
     // Access all session data value as an object
     session.data;
 
-    console.log(session.data);
-
     // You can pass the session data to the page
     return ctx.render({ session: session.data });
   },

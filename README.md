@@ -30,8 +30,8 @@ JWT requires to have a secret key to encrypt new token. Fresh Session use the
 session from your [environment variable](https://deno.land/std/dotenv/load.ts)
 `APP_KEY`.
 
-If you don't know how to setup environment variable locally or on Deno Deploy, a
-blogpost is on the way on [my blog](https://xstevenyung.com)
+If you don't know how to setup environment variable locally, I wrote
+[an article about .env file in Deno Fresh](https://xstevenyung.com/blog/read-.env-file-in-deno-fresh).
 
 ### Create a root middleware (`./routes/_middleware.ts`)
 

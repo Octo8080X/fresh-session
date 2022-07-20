@@ -7,5 +7,6 @@ export function handler(
   req: Request,
   ctx: MiddlewareHandlerContext<State>,
 ) {
+  console.log(req.url);
   return cookieSession(req, ctx);
 }

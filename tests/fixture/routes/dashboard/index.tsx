@@ -3,7 +3,7 @@ import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { WithSession } from "fresh-session";
 
-export type Data = { session: Record<string, string> };
+export type Data = { session: Record<string, string>; message: string };
 
 export const handler: Handlers<
   Data,
@@ -25,10 +25,23 @@ export const handler: Handlers<
     session.data;
 
     // You can pass the session data to the page
-    return ctx.render({ session: session.data });
+    return ctx.render({
+      session: session.data,
+      message: session.get("message"),
+    });
   },
 };
 
 export default function Dashboard({ data }: PageProps<Data>) {
-  return <div>You are logged in as {data.session.email}</div>;
+  return (
+    <main>
+      {data.message && (
+        <div>
+          <p>{data.message}</p>
+        </div>
+      )}
+
+      <div>You are logged in as {data.session.email}</div>
+    </main>
+  );
 }

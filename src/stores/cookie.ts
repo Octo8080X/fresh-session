@@ -55,7 +55,8 @@ export class CookieSessionStorage {
 
   get(sessionId: string) {
     const [, payload] = decode(sessionId);
-    return new Session(payload as object);
+    const { _flash = {}, ...data } = payload;
+    return new Session(data, _flash);
   }
 
   async persist(response: Response, session: Session) {
@@ -63,7 +64,7 @@ export class CookieSessionStorage {
       name: "sessionId",
       value: await create(
         { alg: "HS512", typ: "JWT" },
-        { ...session.data },
+        { ...session.data, _flash: session.newFlash },
         this.#key,
       ),
     });
@@ -76,6 +77,8 @@ export async function cookieSession(
   req: Request,
   ctx: MiddlewareHandlerContext<WithSession>,
 ) {
+  // console.log(req);
+  // console.log("cookieSession started");
   const { sessionId } = getCookies(req.headers);
   const cookieSessionStorage = await createCookieSessionStorage();
 

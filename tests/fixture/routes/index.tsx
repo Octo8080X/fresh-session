@@ -18,15 +18,13 @@ export const handler: Handlers<
   async POST(req, ctx) {
     const formData = await req.formData();
 
-    // ctx.state.session.data = {
-    //   email: formData.get("email"),
-    // };
-    ctx.state.session.set("email", formData.get("email"));
+    ctx.state.session.set("email", formData.get("email") as string);
+    ctx.state.session.flash("message", "Successfully logged in!");
 
     return new Response(null, {
       status: 303,
       headers: {
-        "Location": "/",
+        "Location": "/dashboard",
       },
     });
   },

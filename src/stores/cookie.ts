@@ -50,7 +50,10 @@ export class CookieSessionStorage {
   }
 
   exists(sessionId: string) {
-    return verify(sessionId, this.#key);
+    return verify(sessionId, this.#key).then(() => true).catch((e) => {
+      console.warn("Invalid JWT token, creating new session...");
+      return false;
+    });
   }
 
   get(sessionId: string) {

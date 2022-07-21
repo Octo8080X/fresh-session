@@ -50,6 +50,7 @@ export class CookieSessionStorage {
   }
 
   exists(sessionId: string) {
+    console.log("here");
     try {
       return verify(sessionId, this.#key);
     } catch (e) {

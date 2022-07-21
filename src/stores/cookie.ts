@@ -50,13 +50,10 @@ export class CookieSessionStorage {
   }
 
   exists(sessionId: string) {
-    console.log("here");
-    try {
-      return verify(sessionId, this.#key);
-    } catch (e) {
+    return verify(sessionId, this.#key).then(() => true).catch((e) => {
       console.error(e);
-      return Promise.resolve(false);
-    }
+      return false;
+    });
   }
 
   get(sessionId: string) {

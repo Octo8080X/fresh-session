@@ -53,6 +53,7 @@ export class CookieSessionStorage {
     try {
       return verify(sessionId, this.#key);
     } catch (e) {
+      console.error(e);
       return Promise.resolve(false);
     }
   }

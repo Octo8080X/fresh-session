@@ -58,7 +58,8 @@ export class CookieSessionStorage {
 
   get(sessionId: string) {
     const [, payload] = decode(sessionId);
-    return new Session(payload as object);
+    const { _flash = {}, ...data } = payload;
+    return new Session(data as object, _flash);
   }
 
   async persist(response: Response, session: Session) {
@@ -66,7 +67,7 @@ export class CookieSessionStorage {
       name: "sessionId",
       value: await create(
         { alg: "HS512", typ: "JWT" },
-        { ...session.data },
+        { ...session.data, _flash: session.flashedData },
         this.#key,
       ),
     });

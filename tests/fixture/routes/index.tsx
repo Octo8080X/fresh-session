@@ -3,7 +3,7 @@ import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
 import type { WithSession } from "fresh-session";
 
-export type Data = { session: Record<string, string> };
+export type Data = { session: Record<string, string>; flashedMessage?: string };
 
 export const handler: Handlers<
   Data,
@@ -12,7 +12,9 @@ export const handler: Handlers<
   GET(_req, ctx) {
     const { session } = ctx.state;
 
-    return ctx.render({ session: session.data });
+    const flashedMessage = ctx.state.session.flash("success");
+
+    return ctx.render({ session: session.data, flashedMessage });
   },
 
   async POST(req, ctx) {
@@ -22,6 +24,7 @@ export const handler: Handlers<
     //   email: formData.get("email"),
     // };
     ctx.state.session.set("email", formData.get("email"));
+    ctx.state.session.flash("success", 'Successfully "logged in"');
 
     return new Response(null, {
       status: 303,
@@ -35,6 +38,12 @@ export const handler: Handlers<
 export default function Home({ data }: PageProps<Data>) {
   return (
     <main>
+      {!!data.flashedMessage && (
+        <div>
+          Flashed message: {data.flashedMessage}
+        </div>
+      )}
+
       <section>
         <h1>Your session data</h1>
 

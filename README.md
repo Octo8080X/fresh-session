@@ -88,9 +88,15 @@ export const handler: Handlers<
     session.clear();
     // Access all session data value as an object
     session.data;
+    // Add flash data which will disappear after accessing it
+    session.flash("success", "Successfully flashed a message!");
+    // Accessing the flashed data
+    // /!\ This flashed data will disappear after accessing it one time.
+    session.flash("success");
 
-    // You can pass the session data to the page
-    return ctx.render({ session: session.data });
+    return ctx.render({
+      session: session.data, // You can pass the whole session data to the page
+    });
   },
 };
 

@@ -15,7 +15,7 @@ export class Session {
     return Object.fromEntries(this.#flash);
   }
 
-  set(key: string, value: string) {
+  set(key: string, value: any) {
     this.#data.set(key, value);
 
     return this;
@@ -34,7 +34,7 @@ export class Session {
     return this;
   }
 
-  flash(key: string, value?: string) {
+  flash(key: string, value?: any) {
     if (value === undefined) {
       const flashedValue = this.#flash.get(key);
 

@@ -70,6 +70,7 @@ export class CookieSessionStorage {
         { ...session.data, _flash: session.flashedData },
         this.#key,
       ),
+      path: "/",
     });
 
     return response;

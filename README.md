@@ -104,3 +104,8 @@ export default function Dashboard({ data }: PageProps<Data>) {
   return <div>You are logged in as {data.session.email}</div>;
 }
 ```
+
+## Credit
+
+Inspiration taken from [Oak Sessions](https://github.com/jcs224/oak_sessions) &
+thanks to [@jcs224](https://github.com/jcs224) for all the insight!

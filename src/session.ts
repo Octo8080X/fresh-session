@@ -1,7 +1,8 @@
 export class Session {
   #data = new Map();
   #flash = new Map();
-
+  #doDelete = false;
+  
   constructor(data = {}, flash = {}) {
     this.#data = new Map(Object.entries(data));
     this.#flash = new Map(Object.entries(flash));
@@ -13,6 +14,10 @@ export class Session {
 
   get flashedData() {
     return Object.fromEntries(this.#flash);
+  }
+
+  get doDelete(){
+    return this.#doDelete
   }
 
   set(key: string, value: any) {
@@ -42,12 +47,12 @@ export class Session {
 
       return flashedValue;
     }
-
     this.#flash.set(key, value);
 
     return this;
   }
 
-  // TODO
-  destroy() {}
+  destroy() {
+    this.#doDelete = true;
+  }
 }

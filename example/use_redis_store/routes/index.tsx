@@ -1,10 +1,10 @@
-import { Context, Handlers, PageProp } from "$fresh/server.ts";
+import { HandlerContext, Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import { WithSession } from "fresh-session/mod.ts";
-import type { SessionData } from "./_middleware.ts";
+export type SessionData = { session: Record<string, string>; message?: string };
 
 export const handler: Handlers<SessionData, WithSession> = {
-  GET(_req: Request, ctx: Context) {
+  GET(_req: Request, ctx: HandlerContext<SessionData, WithSession>) {
     const { session } = ctx.state;
     const message = session.flash("message");
 
@@ -13,7 +13,7 @@ export const handler: Handlers<SessionData, WithSession> = {
       message,
     });
   },
-  async POST(req: Request, ctx: Context) {
+  async POST(req: Request, ctx: HandlerContext<SessionData, WithSession>) {
     const { session } = ctx.state;
     const form = await req.formData();
 
@@ -36,7 +36,7 @@ export const handler: Handlers<SessionData, WithSession> = {
   },
 };
 
-export default function Index({ data }: PageProp<SessionData>) {
+export default function Index({ data }: PageProps<SessionData>) {
   return (
     <>
       <Head>

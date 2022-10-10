@@ -86,9 +86,22 @@ export class RedisSessionStorage {
 
       deleteCookie(response.headers, "sessionId");
     } else {
+      let redisOptions: { ex?: number } = {};
+
+      if (this.#cookieOptions?.maxAge) {
+        redisOptions.ex = this.#cookieOptions.maxAge;
+      }
+      if (this.#cookieOptions?.expires) {
+        redisOptions.ex = Math.round(
+          ((this.#cookieOptions?.expires).getTime() - new Date().getTime()) /
+            1000
+        );
+      }
+
       await this.#store.set(
         this.key,
-        JSON.stringify({ data: session.data, _flash: session.flashedData })
+        JSON.stringify({ data: session.data, _flash: session.flashedData }),
+        redisOptions
       );
 
       setCookie(response.headers, {

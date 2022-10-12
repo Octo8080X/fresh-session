@@ -88,7 +88,7 @@ export class CookieSessionStorage {
   }
 }
 
-export function CreateCookieSession(cookieOptions?: CookieOptions) {
+export function createCookieSession(cookieOptions?: CookieOptions) {
   return async function cookieSession(
     req: Request,
     ctx: MiddlewareHandlerContext<WithSession>

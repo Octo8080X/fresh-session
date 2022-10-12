@@ -37,19 +37,16 @@ If you don't know how to setup environment variable locally, I wrote
 
 ```ts
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import {
-  cookieSession,
-  WithSession,
-} from "https://deno.land/x/fresh_session@0.1.8/mod.ts";
+import { createCookieSession, WithSession } from "fresh-session";
 
-export type State = WithSession;
+export type State = {} & WithSession;
 
-export function handler(
-  req: Request,
-  ctx: MiddlewareHandlerContext<State>,
-) {
+const cookieSession = createCookieSession();
+
+function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
   return cookieSession(req, ctx);
 }
+export const handler = [session];
 ```
 
 Learn more about
@@ -103,6 +100,56 @@ export const handler: Handlers<
 export default function Dashboard({ data }: PageProps<Data>) {
   return <div>You are logged in as {data.session.email}</div>;
 }
+```
+
+## Usage Cookie Options
+
+session value is cookie. can set the option for cookie.
+
+```ts
+import { MiddlewareHandlerContext } from "$fresh/server.ts";
+import { createCookieSession, WithSession } from "fresh-session";
+
+export type State = {} & WithSession;
+
+const cookieSession = createCookieSession({
+  maxAge: 30, //Session keep is 30 seconds.
+  httpOnly: true,
+});
+
+export function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
+  return cookieSession(req, ctx);
+}
+export const handler = [session];
+```
+
+## cookie session based on Redis
+
+In addition to JWT, values can be stored in Redis.
+
+```ts
+import { MiddlewareHandlerContext } from "$fresh/server.ts";
+import { createRedisSession, WithSession } from "fresh-session/mod.ts";
+import { connect } from "redis/mod.ts";
+export type State = WithSession;
+
+const redis = await connect({
+  hostname: "something redis server",
+  port: 6379,
+});
+
+const redisSession = createRedisSession(redis);
+
+// or Customizable cookie options and Redis key prefix
+const redisSession = createRedisSession(redis, {
+  keyPrefix: "S_",
+  maxAge: 10,
+});
+
+function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
+  return redisSession(req, ctx);
+}
+export const handler = [session];
 ```
 
 ## Credit

@@ -4,7 +4,7 @@ import {
   MiddlewareHandlerContext,
   setCookie,
 } from "../deps.ts";
-import { type CookieOptions } from "./cookie_option.ts";
+import { type CookieOptions, CookieWithRedisOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
 
 export type WithSession = {
@@ -116,12 +116,30 @@ export class RedisSessionStorage {
   }
 }
 
-export function CreateRedisSession(
+function hasKeyPrefix(
+  cookieWithRedisOptions: any
+): cookieWithRedisOptions is { keyPrefix: string } {
+  if (!cookieWithRedisOptions) return false;
+  if (typeof cookieWithRedisOptions !== "object") return false;
+  if (!cookieWithRedisOptions.keyPrefix) return false;
+  if (typeof cookieWithRedisOptions.keyPrefix !== "string") return false;
+  return true;
+}
+
+export function createRedisSession(
   store: Store,
-  keyPrefix = "session_",
-  cookieOptions?: CookieOptions
+  cookieWithRedisOptions?: CookieWithRedisOptions
 ) {
   const redisStore = store;
+
+  let setupKeyPrefix = "session_";
+  let setupCookieOptions = cookieWithRedisOptions;
+
+  if (hasKeyPrefix(cookieWithRedisOptions)) {
+    const { keyPrefix, ...cookieOptions } = cookieWithRedisOptions;
+    setupKeyPrefix = keyPrefix;
+    setupCookieOptions = cookieOptions;
+  }
 
   return async function RedisSession(
     req: Request,
@@ -131,8 +149,8 @@ export function CreateRedisSession(
     const redisSessionStorage = await createRedisSessionStorage(
       sessionId,
       redisStore,
-      keyPrefix,
-      cookieOptions
+      setupKeyPrefix,
+      setupCookieOptions
     );
 
     if (sessionId && (await redisSessionStorage.exists())) {

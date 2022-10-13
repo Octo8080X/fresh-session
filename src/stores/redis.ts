@@ -126,7 +126,7 @@ function hasKeyPrefix(
   return true;
 }
 
-export function createRedisSession(
+export function redisSession(
   store: Store,
   cookieWithRedisOptions?: CookieWithRedisOptions
 ) {
@@ -141,7 +141,7 @@ export function createRedisSession(
     setupCookieOptions = cookieOptions;
   }
 
-  return async function RedisSession(
+  return async function (
     req: Request,
     ctx: MiddlewareHandlerContext<WithSession>
   ) {

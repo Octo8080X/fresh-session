@@ -1,5 +1,5 @@
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { createRedisSession, WithSession } from "fresh-session/mod.ts";
+import { redisSession, WithSession } from "fresh-session/mod.ts";
 import { connect } from "redis/mod.ts";
 export type State = WithSession;
 
@@ -8,15 +8,15 @@ const redis = await connect({
   port: 6379,
 });
 
-const redisSession = createRedisSession(redis, {
+const session = redisSession(redis, {
   maxAge: 10,
   httpOnly: true,
 });
 
-function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
+function sessionHundler(req: Request, ctx: MiddlewareHandlerContext<State>) {
   if (req.url === `http://localhost:${ctx.localAddr?.port}/`) {
-    return redisSession(req, ctx);
+    return session(req, ctx);
   }
   return ctx.next();
 }
-export const handler = [session];
+export const handler = [sessionHundler];

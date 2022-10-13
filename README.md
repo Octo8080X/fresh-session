@@ -37,16 +37,16 @@ If you don't know how to setup environment variable locally, I wrote
 
 ```ts
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { createCookieSession, WithSession } from "fresh-session";
+import { cookieSession, WithSession } from "fresh-session";
 
 export type State = {} & WithSession;
 
-const cookieSession = createCookieSession();
+const session = cookieSession();
 
-function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
-  return cookieSession(req, ctx);
+function sessionHandler(req: Request, ctx: MiddlewareHandlerContext<State>) {
+  return session(req, ctx);
 }
-export const handler = [session];
+export const handler = [sessionHandler];
 ```
 
 Learn more about
@@ -107,20 +107,14 @@ export default function Dashboard({ data }: PageProps<Data>) {
 session value is cookie. can set the option for cookie.
 
 ```ts
-import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { createCookieSession, WithSession } from "fresh-session";
+import { cookieSession } from "fresh-session";
 
-export type State = {} & WithSession;
-
-const cookieSession = createCookieSession({
-  maxAge: 30, //Session keep is 30 seconds.
-  httpOnly: true,
-});
-
-export function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
-  return cookieSession(req, ctx);
-}
-export const handler = [session];
+export const handler = [
+  cookieSession({
+    maxAge: 30, //Session keep is 30 seconds.
+    httpOnly: true,
+  }),
+];
 ```
 
 ## cookie session based on Redis
@@ -128,28 +122,24 @@ export const handler = [session];
 In addition to JWT, values can be stored in Redis.
 
 ```ts
-import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { createRedisSession, WithSession } from "fresh-session/mod.ts";
+import { redisSession } from "fresh-session/mod.ts";
 import { connect } from "redis/mod.ts";
-export type State = WithSession;
 
 const redis = await connect({
   hostname: "something redis server",
   port: 6379,
 });
 
-const redisSession = createRedisSession(redis);
+export const handler = [redisSession(redis)];
 
 // or Customizable cookie options and Redis key prefix
-const redisSession = createRedisSession(redis, {
-  keyPrefix: "S_",
-  maxAge: 10,
-});
 
-function session(req: Request, ctx: MiddlewareHandlerContext<State>) {
-  return redisSession(req, ctx);
-}
-export const handler = [session];
+export const handler = [
+  redisSession(redis, {
+    keyPrefix: "S_",
+    maxAge: 10,
+  }),
+];
 ```
 
 ## Credit

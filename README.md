@@ -152,13 +152,13 @@ If you are receiving this error, you are likely using a Response.redirect, which
 makes the headers immutable. A workaround for this is to use the following
 instead:
 
-```
+```ts
 new Response(null, {
-	status: 302,
-	headers: {
-		Location: "your-url"
-	}
-})
+  status: 302,
+  headers: {
+    Location: "your-url",
+  },
+});
 ```
 
 ## Credit

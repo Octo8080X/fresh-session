@@ -146,7 +146,7 @@ export const handler = [
 
 Some common questions and troubleshooting errors.
 
-###"TypeError: Headers are immutable."
+### "TypeError: Headers are immutable."
 
 If you are receiving this error, you are likely using a Response.redirect, which
 makes the headers immutable. A workaround for this is to use the following

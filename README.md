@@ -18,7 +18,7 @@ import {
   CookieSessionStorage
   WithSession,
   Session,
-} from "https://deno.land/x/fresh_session@0.1.8/mod.ts";
+} from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 ```
 
 ### Setup secret key
@@ -63,7 +63,7 @@ interacting with your session.
 /** @jsx h */
 import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { WithSession } from "https://deno.land/x/fresh_session@0.1.8/mod.ts";
+import { WithSession } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 
 export type Data = { session: Record<string, string> };
 

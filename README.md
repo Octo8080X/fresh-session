@@ -15,7 +15,7 @@ You can import Fresh Session like so:
 import {
   cookieSession,
   createCookieSessionStorage,
-  CookieSessionStorage
+  CookieSessionStorage,
   WithSession,
   Session,
 } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";

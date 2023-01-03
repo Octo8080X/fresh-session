@@ -43,7 +43,7 @@ export type State = {} & WithSession;
 
 const session = cookieSession();
 
-function sessionHandler(req: Request, ctx: MiddlewareHandlerContext<State>) {
+function sessionHandler(req: Request, ctx: MiddlewareHandlerContext<WithSession>) {
   return session(req, ctx);
 }
 export const handler = [sessionHandler];

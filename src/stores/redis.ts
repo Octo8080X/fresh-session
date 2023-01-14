@@ -7,20 +7,21 @@ import {
 import { type CookieOptions, CookieWithRedisOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
 
-export type WithSession = {
+type WithSession = {
   session: Session;
 };
-interface Store {
-  set: Function;
-  get: Function;
-  del: Function;
+
+export interface Store {
+  set: (key: string, value: string, { ex }?: { ex?: number }) => Promise<void>;
+  get: (key: string) => Promise<string>;
+  del: (key: string) => Promise<void>;
 }
 
 export function createRedisSessionStorage(
   sessionId: string,
   store: Store,
   keyPrefix: string,
-  cookieOptions?: CookieOptions
+  cookieOptions?: CookieOptions,
 ) {
   let cookieOptionsParam = cookieOptions;
   if (!cookieOptionsParam) {
@@ -31,7 +32,7 @@ export function createRedisSessionStorage(
     sessionId,
     store,
     keyPrefix,
-    cookieOptionsParam
+    cookieOptionsParam,
   );
 }
 
@@ -44,7 +45,7 @@ export class RedisSessionStorage {
     key: string,
     store: Store,
     keyPrefix: string,
-    cookieOptions: CookieOptions
+    cookieOptions: CookieOptions,
   ) {
     this.#sessionKey = key;
     this.#store = store;
@@ -56,9 +57,9 @@ export class RedisSessionStorage {
     sessionKey: string | undefined,
     store: Store,
     keyPrefix: string,
-    cookieOptions: CookieOptions
+    cookieOptions: CookieOptions,
   ) {
-    let key = !sessionKey ? crypto.randomUUID() : sessionKey;
+    const key = !sessionKey ? crypto.randomUUID() : sessionKey;
 
     return new this(key, store, keyPrefix, cookieOptions);
   }
@@ -77,7 +78,7 @@ export class RedisSessionStorage {
 
   async get() {
     const { _flash = {}, data } = JSON.parse(await this.#store.get(this.key));
-    return new Session(data as object, _flash);
+    return new Session(data as Record<string, unknown>, _flash);
   }
 
   async persist(response: Response, session: Session) {
@@ -86,22 +87,23 @@ export class RedisSessionStorage {
 
       deleteCookie(response.headers, "sessionId");
     } else {
-      let redisOptions: { ex?: number } = {};
+      const redisOptions: { ex?: number } = {};
 
       if (this.#cookieOptions?.maxAge) {
         redisOptions.ex = this.#cookieOptions.maxAge;
       }
       if (this.#cookieOptions?.expires) {
         redisOptions.ex = Math.round(
-          ((this.#cookieOptions?.expires).getTime() - new Date().getTime()) /
-            1000
+          ((this.#cookieOptions?.expires as Date).getTime() -
+            new Date().getTime()) /
+            1000,
         );
       }
 
       await this.#store.set(
         this.key,
         JSON.stringify({ data: session.data, _flash: session.flashedData }),
-        redisOptions
+        redisOptions,
       );
 
       setCookie(response.headers, {
@@ -117,7 +119,7 @@ export class RedisSessionStorage {
 }
 
 function hasKeyPrefix(
-  cookieWithRedisOptions: any
+  cookieWithRedisOptions?: CookieWithRedisOptions,
 ): cookieWithRedisOptions is { keyPrefix: string } {
   if (!cookieWithRedisOptions) return false;
   if (typeof cookieWithRedisOptions !== "object") return false;
@@ -128,7 +130,7 @@ function hasKeyPrefix(
 
 export function redisSession(
   store: Store,
-  cookieWithRedisOptions?: CookieWithRedisOptions
+  cookieWithRedisOptions?: CookieWithRedisOptions,
 ) {
   const redisStore = store;
 
@@ -143,14 +145,14 @@ export function redisSession(
 
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>
+    ctx: MiddlewareHandlerContext<WithSession>,
   ) {
     const { sessionId } = getCookies(req.headers);
     const redisSessionStorage = await createRedisSessionStorage(
       sessionId,
       redisStore,
       setupKeyPrefix,
-      setupCookieOptions
+      setupCookieOptions,
     );
 
     if (sessionId && (await redisSessionStorage.exists())) {

@@ -1,5 +1,3 @@
-/** @jsx h */
-import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
 import type { WithSession } from "fresh-session";
 
@@ -7,7 +5,7 @@ export type Data = {
   session: Record<string, string>;
   flashedMessage?: string;
   msg?: string;
-  errors?: any[];
+  errors?: unknown[];
 };
 
 export const handler: Handlers<

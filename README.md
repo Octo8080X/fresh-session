@@ -14,10 +14,10 @@ You can import Fresh Session like so:
 ```ts
 import {
   cookieSession,
-  createCookieSessionStorage,
   CookieSessionStorage,
-  WithSession,
+  createCookieSessionStorage,
   Session,
+  WithSession,
 } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 ```
 

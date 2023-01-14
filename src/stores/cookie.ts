@@ -14,7 +14,7 @@ export function key() {
 
   if (!key) {
     console.warn(
-      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue."
+      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue.",
     );
   }
 
@@ -23,7 +23,7 @@ export function key() {
     new TextEncoder().encode(key || "not-secret"),
     { name: "HMAC", hash: "SHA-512" },
     false,
-    ["sign", "verify"]
+    ["sign", "verify"],
   );
 }
 
@@ -60,7 +60,7 @@ export class CookieSessionStorage {
   exists(sessionId: string) {
     return verify(sessionId, this.#key)
       .then(() => true)
-      .catch((e) => {
+      .catch((_) => {
         console.warn("Invalid JWT token, creating new session...");
         return false;
       });
@@ -68,8 +68,10 @@ export class CookieSessionStorage {
 
   get(sessionId: string) {
     const [, payload] = decode(sessionId);
-    const { _flash = {}, ...data } = payload;
-    return new Session(data as object, _flash);
+    const { _flash = {}, ...data } = payload as {
+      _flash: Record<string, unknown>;
+    };
+    return new Session(data as Record<string, unknown>, _flash);
   }
 
   async persist(response: Response, session: Session) {
@@ -78,7 +80,7 @@ export class CookieSessionStorage {
       value: await create(
         { alg: "HS512", typ: "JWT" },
         { ...session.data, _flash: session.flashedData },
-        this.#key
+        this.#key,
       ),
       path: "/",
       ...this.#cookieOptions,
@@ -91,11 +93,11 @@ export class CookieSessionStorage {
 export function cookieSession(cookieOptions?: CookieOptions) {
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>
+    ctx: MiddlewareHandlerContext<WithSession>,
   ) {
     const { sessionId } = getCookies(req.headers);
     const cookieSessionStorage = await createCookieSessionStorage(
-      cookieOptions
+      cookieOptions,
     );
 
     if (sessionId && (await cookieSessionStorage.exists(sessionId))) {

@@ -5,10 +5,8 @@ import {
   setCookie,
 } from "../deps.ts";
 import { Session } from "../session.ts";
+import type { WithSession } from "./interface.ts";
 
-export type WithSession = {
-  session: Session;
-};
 interface Store {
   set: Function;
   get: Function;

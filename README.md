@@ -15,10 +15,10 @@ You can import Fresh Session like so:
 import {
   cookieSession,
   createCookieSessionStorage,
-  CookieSessionStorage
+  CookieSessionStorage,
   WithSession,
   Session,
-} from "https://deno.land/x/fresh_session@0.1.8/mod.ts";
+} from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 ```
 
 ### Setup secret key
@@ -37,19 +37,16 @@ If you don't know how to setup environment variable locally, I wrote
 
 ```ts
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import {
-  cookieSession,
-  WithSession,
-} from "https://deno.land/x/fresh_session@0.1.8/mod.ts";
+import { cookieSession, WithSession } from "fresh-session";
 
-export type State = WithSession;
+export type State = {} & WithSession;
 
-export function handler(
-  req: Request,
-  ctx: MiddlewareHandlerContext<State>,
-) {
-  return cookieSession(req, ctx);
+const session = cookieSession();
+
+function sessionHandler(req: Request, ctx: MiddlewareHandlerContext<State>) {
+  return session(req, ctx);
 }
+export const handler = [sessionHandler];
 ```
 
 Learn more about
@@ -66,7 +63,7 @@ interacting with your session.
 /** @jsx h */
 import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { WithSession } from "https://deno.land/x/fresh_session@0.1.8/mod.ts";
+import { WithSession } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 
 export type Data = { session: Record<string, string> };
 
@@ -103,6 +100,65 @@ export const handler: Handlers<
 export default function Dashboard({ data }: PageProps<Data>) {
   return <div>You are logged in as {data.session.email}</div>;
 }
+```
+
+## Usage Cookie Options
+
+session value is cookie. can set the option for cookie.
+
+```ts
+import { cookieSession } from "fresh-session";
+
+export const handler = [
+  cookieSession({
+    maxAge: 30, //Session keep is 30 seconds.
+    httpOnly: true,
+  }),
+];
+```
+
+## cookie session based on Redis
+
+In addition to JWT, values can be stored in Redis.
+
+```ts
+import { redisSession } from "fresh-session/mod.ts";
+import { connect } from "redis/mod.ts";
+
+const redis = await connect({
+  hostname: "something redis server",
+  port: 6379,
+});
+
+export const handler = [redisSession(redis)];
+
+// or Customizable cookie options and Redis key prefix
+
+export const handler = [
+  redisSession(redis, {
+    keyPrefix: "S_",
+    maxAge: 10,
+  }),
+];
+```
+
+## FAQ &amp; Troubleshooting Errors
+
+Some common questions and troubleshooting errors.
+
+### "TypeError: Headers are immutable."
+
+If you are receiving this error, you are likely using a Response.redirect, which
+makes the headers immutable. A workaround for this is to use the following
+instead:
+
+```ts
+new Response(null, {
+  status: 302,
+  headers: {
+    Location: "your-url",
+  },
+});
 ```
 
 ## Credit

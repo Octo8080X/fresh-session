@@ -6,6 +6,7 @@ import {
   setCookie,
   verify,
 } from "../deps.ts";
+import { type CookieOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
 import type { WithSession } from "./interface.ts";
 
@@ -14,7 +15,7 @@ export function key() {
 
   if (!key) {
     console.warn(
-      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue.",
+      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue."
     );
   }
 
@@ -23,23 +24,30 @@ export function key() {
     new TextEncoder().encode(key || "not-secret"),
     { name: "HMAC", hash: "SHA-512" },
     false,
-    ["sign", "verify"],
+    ["sign", "verify"]
   );
 }
 
-export function createCookieSessionStorage() {
-  return CookieSessionStorage.init();
+export function createCookieSessionStorage(cookieOptions?: CookieOptions) {
+  let cookieOptionsParam = cookieOptions;
+  if (!cookieOptionsParam) {
+    cookieOptionsParam = {};
+  }
+
+  return CookieSessionStorage.init(cookieOptionsParam);
 }
 
 export class CookieSessionStorage {
   #key: CryptoKey;
+  #cookieOptions: CookieOptions;
 
-  constructor(key: CryptoKey) {
+  constructor(key: CryptoKey, cookieOptions: CookieOptions) {
     this.#key = key;
+    this.#cookieOptions = cookieOptions;
   }
 
-  static async init() {
-    return new this(await key());
+  static async init(cookieOptions: CookieOptions) {
+    return new this(await key(), cookieOptions);
   }
 
   create() {
@@ -47,10 +55,12 @@ export class CookieSessionStorage {
   }
 
   exists(sessionId: string) {
-    return verify(sessionId, this.#key).then(() => true).catch((e) => {
-      console.warn("Invalid JWT token, creating new session...");
-      return false;
-    });
+    return verify(sessionId, this.#key)
+      .then(() => true)
+      .catch((e) => {
+        console.warn("Invalid JWT token, creating new session...");
+        return false;
+      });
   }
 
   get(sessionId: string) {
@@ -65,33 +75,36 @@ export class CookieSessionStorage {
       value: await create(
         { alg: "HS512", typ: "JWT" },
         { ...session.data, _flash: session.flashedData },
-        this.#key,
+        this.#key
       ),
       path: "/",
+      ...this.#cookieOptions,
     });
 
     return response;
   }
 }
 
-export async function cookieSession(
-  req: Request,
-  ctx: MiddlewareHandlerContext<WithSession>,
-) {
-  const { sessionId } = getCookies(req.headers);
-  const cookieSessionStorage = await createCookieSessionStorage();
-
-  if (
-    sessionId && (await cookieSessionStorage.exists(sessionId))
+export function cookieSession(cookieOptions?: CookieOptions) {
+  return async function (
+    req: Request,
+    ctx: MiddlewareHandlerContext<WithSession>
   ) {
-    ctx.state.session = await cookieSessionStorage.get(sessionId);
-  }
+    const { sessionId } = getCookies(req.headers);
+    const cookieSessionStorage = await createCookieSessionStorage(
+      cookieOptions
+    );
 
-  if (!ctx.state.session) {
-    ctx.state.session = cookieSessionStorage.create();
-  }
+    if (sessionId && (await cookieSessionStorage.exists(sessionId))) {
+      ctx.state.session = await cookieSessionStorage.get(sessionId);
+    }
 
-  const response = await ctx.next();
+    if (!ctx.state.session) {
+      ctx.state.session = cookieSessionStorage.create();
+    }
 
-  return cookieSessionStorage.persist(response, ctx.state.session);
+    const response = await ctx.next();
+
+    return cookieSessionStorage.persist(response, ctx.state.session);
+  };
 }

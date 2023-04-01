@@ -1,11 +1,15 @@
-# fresh project
+# Use Redis store sample
 
-### Usage
+This project is fresh project used fresh-session with redis store.
 
-Start the project:
+## Usage
 
+```sh
+$ docker compose build
+
+$ docker compose up -d
+
+$ docker compose exec app deno task start
+
+# Please access  with brawser to http://localhost:8000.
 ```
-deno task start
-```
-
-This will watch the project directory and restart as necessary.

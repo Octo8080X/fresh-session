@@ -14,10 +14,10 @@ You can import Fresh Session like so:
 ```ts
 import {
   cookieSession,
-  createCookieSessionStorage,
   CookieSessionStorage,
-  WithSession,
+  createCookieSessionStorage,
   Session,
+  WithSession,
 } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 ```
 
@@ -162,6 +162,8 @@ new Response(null, {
 ```
 
 ## Credit
+
+Initial work done by [@xstevenyung](https://github.com/xstevenyung)
 
 Inspiration taken from [Oak Sessions](https://github.com/jcs224/oak_sessions) &
 thanks to [@jcs224](https://github.com/jcs224) for all the insight!

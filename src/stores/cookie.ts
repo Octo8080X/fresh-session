@@ -8,6 +8,7 @@ import {
 } from "../deps.ts";
 import { type CookieOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
+import type { WithSession } from "./interface.ts";
 
 export function key() {
   const key = Deno.env.get("APP_KEY");
@@ -26,10 +27,6 @@ export function key() {
     ["sign", "verify"]
   );
 }
-
-export type WithSession = {
-  session: Session;
-};
 
 export function createCookieSessionStorage(cookieOptions?: CookieOptions) {
   let cookieOptionsParam = cookieOptions;

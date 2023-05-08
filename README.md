@@ -23,11 +23,11 @@ import {
 
 ### Setup secret key
 
-Fresh Session currently use [JSON Web Token](https://jwt.io/) under the hood to
+Fresh Session currently uses [JSON Web Token](https://jwt.io/) under the hood to
 create and manage session in the cookies.
 
-JWT requires to have a secret key to encrypt new token. Fresh Session use the
-session from your [environment variable](https://deno.land/std/dotenv/load.ts)
+JWT requires a secret key to sign new tokens. Fresh Session uses the
+secret key from your [environment variable](https://deno.land/std/dotenv/load.ts)
 `APP_KEY`.
 
 If you don't know how to setup environment variable locally, I wrote

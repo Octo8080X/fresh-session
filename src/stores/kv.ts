@@ -8,41 +8,35 @@ import { type CookieOptions, CookieWithRedisOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
 import type { WithSession } from "./interface.ts";
 
-interface Store {
-  set: Function;
-  get: Function;
-  del: Function;
-}
-
-export function createRedisSessionStorage(
+export function createKvSessionStorage(
   sessionId: string,
-  store: Store,
+  store: Deno.Kv,
   keyPrefix: string,
-  cookieOptions?: CookieOptions
+  cookieOptions?: CookieOptions,
 ) {
   let cookieOptionsParam = cookieOptions;
   if (!cookieOptionsParam) {
     cookieOptionsParam = {};
   }
 
-  return RedisSessionStorage.init(
+  return KvSessionStorage.init(
     sessionId,
     store,
     keyPrefix,
-    cookieOptionsParam
+    cookieOptionsParam,
   );
 }
 
-export class RedisSessionStorage {
+export class KvSessionStorage {
   #sessionKey: string;
   #keyPrefix: string;
-  #store: Store;
+  #store: Deno.Kv;
   #cookieOptions: CookieOptions;
   constructor(
     key: string,
-    store: Store,
+    store: Deno.Kv,
     keyPrefix: string,
-    cookieOptions: CookieOptions
+    cookieOptions: CookieOptions,
   ) {
     this.#sessionKey = key;
     this.#store = store;
@@ -52,9 +46,9 @@ export class RedisSessionStorage {
 
   static init(
     sessionKey: string | undefined,
-    store: Store,
+    store: Deno.Kv,
     keyPrefix: string,
-    cookieOptions: CookieOptions
+    cookieOptions: CookieOptions,
   ) {
     let key = !sessionKey ? crypto.randomUUID() : sessionKey;
 
@@ -70,17 +64,18 @@ export class RedisSessionStorage {
   }
 
   async exists(): Promise<boolean> {
-    return !!(await this.#store.get(this.key));
+    return !(await this.#store.get(["fresh-session", this.key]).value);
   }
 
   async get() {
-    const { _flash = {}, data } = JSON.parse(await this.#store.get(this.key));
+    const { _flash = {}, data } = { ...(await this.#store.get(["fresh-session", this.key])).value};
+
     return new Session(data as object, _flash);
   }
 
   async persist(response: Response, session: Session) {
     if (session.doDelete) {
-      await this.#store.del(this.key);
+      await this.#store.delete(["fresh-session", this.key]);
 
       deleteCookie(response.headers, "sessionId");
     } else {
@@ -92,14 +87,14 @@ export class RedisSessionStorage {
       if (this.#cookieOptions?.expires) {
         redisOptions.ex = Math.round(
           ((this.#cookieOptions?.expires).getTime() - new Date().getTime()) /
-            1000
+            1000,
         );
       }
 
       await this.#store.set(
-        this.key,
-        JSON.stringify({ data: session.data, _flash: session.flashedData }),
-        redisOptions
+        ["fresh-session", this.key],
+        { data: session.data, _flash: session.flashedData },
+        redisOptions,
       );
 
       setCookie(response.headers, {
@@ -115,7 +110,7 @@ export class RedisSessionStorage {
 }
 
 function hasKeyPrefix(
-  cookieWithRedisOptions: any
+  cookieWithRedisOptions: any,
 ): cookieWithRedisOptions is { keyPrefix: string } {
   if (!cookieWithRedisOptions) return false;
   if (typeof cookieWithRedisOptions !== "object") return false;
@@ -124,12 +119,10 @@ function hasKeyPrefix(
   return true;
 }
 
-export function redisSession(
-  store: Store,
-  cookieWithRedisOptions?: CookieWithRedisOptions
+export function kvSession(
+  storePath: string | null,
+  cookieWithRedisOptions?: CookieWithRedisOptions,
 ) {
-  const redisStore = store;
-
   let setupKeyPrefix = "session_";
   let setupCookieOptions = cookieWithRedisOptions;
 
@@ -141,25 +134,39 @@ export function redisSession(
 
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>
+    ctx: MiddlewareHandlerContext<WithSession>,
   ) {
     const { sessionId } = getCookies(req.headers);
-    const redisSessionStorage = await createRedisSessionStorage(
+
+    const kvStore = await Deno.openKv(storePath);
+    for await (const entry of kvStore.list({ prefix: ["fresh-session"] })) {
+      console.log(entry.key);
+      console.log(entry.value);
+    }
+
+    const kvSessionStorage = await createKvSessionStorage(
       sessionId,
-      redisStore,
+      kvStore,
       setupKeyPrefix,
-      setupCookieOptions
+      setupCookieOptions,
     );
 
-    if (sessionId && (await redisSessionStorage.exists())) {
-      ctx.state.session = await redisSessionStorage.get();
+    if (sessionId && (await kvSessionStorage.exists())) {
+      ctx.state.session = await kvSessionStorage.get();
     }
 
     if (!ctx.state.session) {
-      ctx.state.session = redisSessionStorage.create();
+      ctx.state.session = kvSessionStorage.create();
     }
     const response = await ctx.next();
 
-    return redisSessionStorage.persist(response, ctx.state.session);
+    const persistedResponse = kvSessionStorage.persist(
+      response,
+      ctx.state.session,
+    );
+
+    await kvStore.close();
+
+    return persistedResponse;
   };
 }

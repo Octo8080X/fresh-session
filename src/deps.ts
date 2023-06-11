@@ -1,4 +1,4 @@
-export type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.0.1/src/server/types.ts";
+export type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.1.6/server.ts";
 export {
   deleteCookie,
   getCookies,

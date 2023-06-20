@@ -70,6 +70,10 @@ export class CookieSessionStorage {
   }
 
   async persist(response: Response, session: Session) {
+    if (session.doKeyRotate) {
+      this.keyRotate();
+    }
+
     setCookie(response.headers, {
       name: "sessionId",
       value: await create(
@@ -82,6 +86,9 @@ export class CookieSessionStorage {
     });
 
     return response;
+  }
+  keyRotate(){
+    console.warn("%c*****************************************************\n* '.keyRotate' is not supported for cookie sessions *\n*****************************************************", "color: yellow;")
   }
 }
 

@@ -74,6 +74,10 @@ export class KvSessionStorage {
   }
 
   async persist(response: Response, session: Session) {
+    if (session.doKeyRotate) {
+      this.keyRotate();
+    }
+
     if (session.doDelete) {
       await this.#store.delete(["fresh-session", this.key]);
 
@@ -106,6 +110,9 @@ export class KvSessionStorage {
     }
 
     return response;
+  }
+  keyRotate(){
+    this.#sessionKey = crypto.randomUUID()
   }
 }
 

@@ -87,6 +87,9 @@ export class CookieSessionStorage {
 
     return response;
   }
+  /**
+   * Is not work rotate the key in cookie sessions.
+   */
   keyRotate(){
     console.warn("%c*****************************************************\n* '.keyRotate' is not supported for cookie sessions *\n*****************************************************", "color: yellow;")
   }

@@ -146,11 +146,6 @@ export function kvSession(
     const { sessionId } = getCookies(req.headers);
 
     const kvStore = await Deno.openKv(storePath);
-    for await (const entry of kvStore.list({ prefix: ["fresh-session"] })) {
-      console.log(entry.key);
-      console.log(entry.value);
-    }
-
     const kvSessionStorage = await createKvSessionStorage(
       sessionId,
       kvStore,

@@ -2,6 +2,7 @@ export class Session {
   #data = new Map();
   #flash = new Map();
   #doDelete = false;
+  #doKeyRotate = false;
 
   constructor(data = {}, flash = {}) {
     this.#data = new Map(Object.entries(data));
@@ -18,6 +19,10 @@ export class Session {
 
   get doDelete() {
     return this.#doDelete;
+  }
+
+  get doKeyRotate() {
+    return this.#doKeyRotate;
   }
 
   set(key: string, value: any) {
@@ -54,5 +59,9 @@ export class Session {
 
   destroy() {
     this.#doDelete = true;
+  }
+
+  keyRotate(){
+    this.#doKeyRotate = true;
   }
 }

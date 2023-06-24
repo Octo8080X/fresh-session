@@ -79,6 +79,10 @@ export class RedisSessionStorage {
   }
 
   async persist(response: Response, session: Session) {
+    if (session.doKeyRotate) {
+      this.keyRotate();
+    }
+
     if (session.doDelete) {
       await this.#store.del(this.key);
 
@@ -111,6 +115,9 @@ export class RedisSessionStorage {
     }
 
     return response;
+  }
+  keyRotate(){
+    this.#sessionKey = crypto.randomUUID()
   }
 }
 

@@ -74,6 +74,10 @@ export class KvSessionStorage {
   }
 
   async persist(response: Response, session: Session) {
+    if (session.doKeyRotate) {
+      this.keyRotate();
+    }
+
     if (session.doDelete) {
       await this.#store.delete(["fresh-session", this.key]);
 
@@ -107,6 +111,9 @@ export class KvSessionStorage {
 
     return response;
   }
+  keyRotate(){
+    this.#sessionKey = crypto.randomUUID()
+  }
 }
 
 function hasKeyPrefix(
@@ -139,11 +146,6 @@ export function kvSession(
     const { sessionId } = getCookies(req.headers);
 
     const kvStore = await Deno.openKv(storePath);
-    for await (const entry of kvStore.list({ prefix: ["fresh-session"] })) {
-      console.log(entry.key);
-      console.log(entry.value);
-    }
-
     const kvSessionStorage = await createKvSessionStorage(
       sessionId,
       kvStore,

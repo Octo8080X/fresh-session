@@ -6,7 +6,6 @@ export type SessionData = { session: Record<string, string>; message?: string };
 export const handler: Handlers<SessionData, WithSession> = {
   GET(_req: Request, ctx: HandlerContext<SessionData, WithSession>) {
     const { session } = ctx.state;
-
     const message = session.flash("message");
 
     return ctx.render({
@@ -28,6 +27,9 @@ export const handler: Handlers<SessionData, WithSession> = {
       const text = form.get("new_session_text_value");
       session.set("text", text);
       session.flash("message", "Session value update!");
+      if(form.get("session_key_rotate")) {
+        session.keyRotate();
+      }
     }
 
     return new Response("", {
@@ -54,6 +56,14 @@ export default function Index({ data }: PageProps<SessionData>) {
                 name="new_session_text_value"
                 placeholder="New session_text_value"
               />
+            </div>
+            <div>
+              <input
+                type="checkbox"
+                id="session_key_rotate"
+                name="session_key_rotate"
+                placeholder="New session_text_value"
+              /><label for="session_key_rotate">Session key rotate</label>
             </div>
             <div>
               <button type="submit">Update Session Value!</button>

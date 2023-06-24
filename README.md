@@ -90,6 +90,13 @@ export const handler: Handlers<
     // Accessing the flashed data
     // /!\ This flashed data will disappear after accessing it one time.
     session.flash("success");
+    // Session Key Rotation only kv store and redis store.
+    // Is not work in cookie store. 
+
+    // Rotate the session key. Only supported by the kv store and redis store, not the cookie store.
+    // If using the session for authentication, with a kv or redis store, it is recommended to rotate the key at login to prevent session fixation attack.
+    // The cookie store is immune from this issue.
+    session.keyRotate();
 
     return ctx.render({
       session: session.data, // You can pass the whole session data to the page

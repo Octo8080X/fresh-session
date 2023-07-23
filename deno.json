@@ -12,5 +12,6 @@
     "twind": "https://esm.sh/twind@0.16.17",
     "twind/": "https://esm.sh/twind@0.16.17/",
     "fresh-session/": "https://deno.land/x/fresh_session@0.2.1/"
-  }
+  },
+  "lock": false
 }

@@ -49,7 +49,7 @@ export default function Index({ data }: PageProps<SessionData>) {
       <div>
         {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
         <div>Flash Message: {data.message}</div>
-        <div>Session Value: ${data.session.text}</div>
+        <div>Now Session Value: {data.session.text}</div>
         <div>
           <form method="POST" action="/">
             <div>

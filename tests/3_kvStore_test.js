@@ -39,7 +39,7 @@ Deno.test(
         assert(
           text.includes("<div>Flash Message: Session value update!</div>"),
         );
-        assert(text.includes(`<div>Session Value: $${SESSION_TEXT}</div>`));
+        assert(text.includes(`<div>Now Session Value: ${SESSION_TEXT}</div>`));
         assertEquals(response.status, Status.OK);
       },
     );
@@ -50,7 +50,7 @@ Deno.test(
       assert(
         text.includes("<div>Flash Message: </div>"),
       );
-      assert(text.includes(`<div>Session Value: $${SESSION_TEXT}</div>`));
+      assert(text.includes(`<div>Now Session Value: ${SESSION_TEXT}</div>`));
       assertEquals(response.status, Status.OK);
     });
 

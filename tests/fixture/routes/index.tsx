@@ -1,5 +1,3 @@
-/** @jsx h */
-import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
 import type { WithSession } from "fresh-session";
 

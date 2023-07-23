@@ -11,7 +11,7 @@ const BASE_URL = "http://localhost:8000";
 Deno.env.set("APP_KEY", "something_for_testing");
 
 Deno.test(
-  "Route Testing",
+  "Test KV Store Example",
   {
     sanitizeResources: false,
     sanitizeOps: false,

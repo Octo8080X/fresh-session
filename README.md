@@ -26,8 +26,8 @@ import {
 Fresh Session currently uses [JSON Web Token](https://jwt.io/) under the hood to
 create and manage session in the cookies.
 
-JWT requires a secret key to sign new tokens. Fresh Session uses the
-secret key from your [environment variable](https://deno.land/std/dotenv/load.ts)
+JWT requires a secret key to sign new tokens. Fresh Session uses the secret key
+from your [environment variable](https://deno.land/std/dotenv/load.ts)
 `APP_KEY`.
 
 If you don't know how to setup environment variable locally, I wrote
@@ -91,7 +91,7 @@ export const handler: Handlers<
     // /!\ This flashed data will disappear after accessing it one time.
     session.flash("success");
     // Session Key Rotation only kv store and redis store.
-    // Is not work in cookie store. 
+    // Is not work in cookie store.
 
     // Rotate the session key. Only supported by the kv store and redis store, not the cookie store.
     // If using the session for authentication, with a kv or redis store, it is recommended to rotate the key at login to prevent session fixation attack.

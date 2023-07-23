@@ -61,7 +61,7 @@ export class Session {
     this.#doDelete = true;
   }
 
-  keyRotate(){
+  keyRotate() {
     this.#doKeyRotate = true;
   }
 }

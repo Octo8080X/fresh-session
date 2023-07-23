@@ -18,7 +18,7 @@ export function createRedisSessionStorage(
   sessionId: string,
   store: Store,
   keyPrefix: string,
-  cookieOptions?: CookieOptions
+  cookieOptions?: CookieOptions,
 ) {
   let cookieOptionsParam = cookieOptions;
   if (!cookieOptionsParam) {
@@ -29,7 +29,7 @@ export function createRedisSessionStorage(
     sessionId,
     store,
     keyPrefix,
-    cookieOptionsParam
+    cookieOptionsParam,
   );
 }
 
@@ -42,7 +42,7 @@ export class RedisSessionStorage {
     key: string,
     store: Store,
     keyPrefix: string,
-    cookieOptions: CookieOptions
+    cookieOptions: CookieOptions,
   ) {
     this.#sessionKey = key;
     this.#store = store;
@@ -54,7 +54,7 @@ export class RedisSessionStorage {
     sessionKey: string | undefined,
     store: Store,
     keyPrefix: string,
-    cookieOptions: CookieOptions
+    cookieOptions: CookieOptions,
   ) {
     let key = !sessionKey ? crypto.randomUUID() : sessionKey;
 
@@ -96,14 +96,14 @@ export class RedisSessionStorage {
       if (this.#cookieOptions?.expires) {
         redisOptions.ex = Math.round(
           ((this.#cookieOptions?.expires).getTime() - new Date().getTime()) /
-            1000
+            1000,
         );
       }
 
       await this.#store.set(
         this.key,
         JSON.stringify({ data: session.data, _flash: session.flashedData }),
-        redisOptions
+        redisOptions,
       );
 
       setCookie(response.headers, {
@@ -116,13 +116,13 @@ export class RedisSessionStorage {
 
     return response;
   }
-  keyRotate(){
-    this.#sessionKey = crypto.randomUUID()
+  keyRotate() {
+    this.#sessionKey = crypto.randomUUID();
   }
 }
 
 function hasKeyPrefix(
-  cookieWithRedisOptions: any
+  cookieWithRedisOptions: any,
 ): cookieWithRedisOptions is { keyPrefix: string } {
   if (!cookieWithRedisOptions) return false;
   if (typeof cookieWithRedisOptions !== "object") return false;
@@ -133,7 +133,7 @@ function hasKeyPrefix(
 
 export function redisSession(
   store: Store,
-  cookieWithRedisOptions?: CookieWithRedisOptions
+  cookieWithRedisOptions?: CookieWithRedisOptions,
 ) {
   const redisStore = store;
 
@@ -148,14 +148,14 @@ export function redisSession(
 
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>
+    ctx: MiddlewareHandlerContext<WithSession>,
   ) {
     const { sessionId } = getCookies(req.headers);
     const redisSessionStorage = await createRedisSessionStorage(
       sessionId,
       redisStore,
       setupKeyPrefix,
-      setupCookieOptions
+      setupCookieOptions,
     );
 
     if (sessionId && (await redisSessionStorage.exists())) {

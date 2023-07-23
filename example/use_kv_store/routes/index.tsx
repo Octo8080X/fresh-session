@@ -27,7 +27,7 @@ export const handler: Handlers<SessionData, WithSession> = {
       const text = form.get("new_session_text_value");
       session.set("text", text);
       session.flash("message", "Session value update!");
-      if(form.get("session_key_rotate")) {
+      if (form.get("session_key_rotate")) {
         session.keyRotate();
       }
     }
@@ -63,7 +63,8 @@ export default function Index({ data }: PageProps<SessionData>) {
                 id="session_key_rotate"
                 name="session_key_rotate"
                 placeholder="New session_text_value"
-              /><label for="session_key_rotate">Session key rotate</label>
+              />
+              <label for="session_key_rotate">Session key rotate</label>
             </div>
             <div>
               <button type="submit">Update Session Value!</button>

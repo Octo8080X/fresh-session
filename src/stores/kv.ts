@@ -68,7 +68,9 @@ export class KvSessionStorage {
   }
 
   async get() {
-    const { _flash = {}, data } = { ...(await this.#store.get(["fresh-session", this.key])).value};
+    const { _flash = {}, data } = {
+      ...(await this.#store.get(["fresh-session", this.key])).value,
+    };
 
     return new Session(data as object, _flash);
   }
@@ -111,8 +113,8 @@ export class KvSessionStorage {
 
     return response;
   }
-  keyRotate(){
-    this.#sessionKey = crypto.randomUUID()
+  keyRotate() {
+    this.#sessionKey = crypto.randomUUID();
   }
 }
 

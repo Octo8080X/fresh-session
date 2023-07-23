@@ -1,6 +1,5 @@
 import { freshTestWrapper } from "./wrapper.js";
-import { assertEquals } from "$std/assert/assert_equals.ts";
-import { assert } from "$std/assert/assert.ts";
+import { assert, assertEquals } from "$std/assert/mod.ts";
 import { Status } from "$std/http/http_status.ts";
 import { wrapFetch } from "cookiejar";
 

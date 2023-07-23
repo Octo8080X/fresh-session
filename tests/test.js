@@ -16,6 +16,18 @@ Deno.test(
       assertEquals(response.status, Status.OK);
     });
 
+    await t.step("The dashboard should work", async () => {
+      const response = await fetch(`${BASE_URL}/dashboard`);
+      assertEquals(response.status, Status.OK);
+    });
+
+    await t.step("The other route should work", async () => {
+      const response = await fetch(`${BASE_URL}/other-route`, {
+        method: "POST",
+      });
+      assertEquals(response.status, Status.OK);
+    });
+
     await t.step("The 404 page should 404", async () => {
       const response = await fetch(`${BASE_URL}/404`);
       assertEquals(response.status, Status.NotFound);

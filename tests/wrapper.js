@@ -1,9 +1,11 @@
 import { delay } from "$std/async/delay.ts";
 import { startFreshServer } from "$fresh/tests/test_utils.ts";
 
+Deno.env.set("APP_KEY", "something_for_testing");
+
 export const BASE_URL = "http://localhost:8000";
 
-export const freshTestWrapper = (theTests) => async (t) => {
+export const fixtureTestWrapper = (theTests) => async (t) => {
   const { serverProcess, lines } = await startFreshServer({
     args: ["run", "-A", "./tests/fixture/main.ts"],
   });

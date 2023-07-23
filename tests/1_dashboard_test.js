@@ -1,11 +1,9 @@
-import { BASE_URL, freshTestWrapper } from "./wrapper.js";
+import { BASE_URL, fixtureTestWrapper } from "./wrapper.js";
 import { assert, assertEquals } from "$std/assert/mod.ts";
 import { Status } from "$std/http/http_status.ts";
 import { wrapFetch } from "cookiejar";
 
 const fetch = wrapFetch();
-
-Deno.env.set("APP_KEY", "something_for_testing");
 
 Deno.test(
   "The Dashboard should show a new login",
@@ -13,8 +11,8 @@ Deno.test(
     sanitizeResources: false,
     sanitizeOps: false,
   },
-  freshTestWrapper(async (t) => {
-    const EMAIL = "taylor@example.com";
+  fixtureTestWrapper(async (t) => {
+    const EMAIL = "example@example.com";
 
     await t.step("The dashboard shows nothing", async () => {
       const response = await fetch(`${BASE_URL}/dashboard`);

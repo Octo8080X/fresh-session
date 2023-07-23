@@ -5,8 +5,6 @@ import { wrapFetch } from "cookiejar";
 
 const fetch = wrapFetch();
 
-Deno.env.set("APP_KEY", "something_for_testing");
-
 Deno.test(
   "Test KV Store Example",
   {

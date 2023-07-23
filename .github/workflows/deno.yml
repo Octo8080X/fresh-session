@@ -1,0 +1,63 @@
+# This workflow will install Deno then run Deno lint and test.
+# For more information see: https://github.com/denoland/setup-deno
+
+name: Deno Deploy & Test
+
+on:
+  push:
+    branches: ["main","test"]
+  pull_request:
+    branches: ["main","test"]
+
+permissions:
+  id-token: write # This is required to allow the GitHub Action to authenticate with Deno Deploy.
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DENO_ENV: testing
+      BASE_URL: http://localhost:8000
+      DENO_DIR: deno_dir
+      CHROMIUM_PATH: deno_dir/deno_puppeteer/chromium/
+      APP_KEY: thisappkeyisherefortestingpurposes
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      # - name: Setup .env secrets file
+      #   run: echo $ENV_GITHUB_ACTIONS | base64 -d > .env
+      #   env:
+      #     ENV_GITHUB_ACTIONS: ${{ secrets.ENV_GITHUB_ACTIONS }}
+
+      - name: Setup Deno
+        # uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.31.1
+          
+      - name: Verify formatting
+        run: deno fmt --check
+
+      # - name: Run linter
+      #   run: deno lint
+      
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          # The Chrome install gets cached in here too...
+          key: denoDeps-${{ hashFiles('deno.lock') }}
+          path: ${{ env.DENO_DIR }}
+      
+      # - name: Install Chromium for Puppeteer
+      #   run: PUPPETEER_PRODUCT=chrome deno run -A --unstable https://deno.land/x/puppeteer@16.2.0/install.ts
+
+      # - name: Cache puppeteer
+      #   uses: actions/cache@v3
+      #   with:
+      #     key: puppeteer_${{ runner.os }}_v16_2_0
+      #     path: ${{ env.CHROMIUM_PATH }}
+
+      - name: Run tests
+        run: deno test -A

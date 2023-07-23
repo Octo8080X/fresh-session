@@ -52,6 +52,32 @@ Deno.test(
       assertEquals(response.status, Status.OK);
     });
 
+    await t.step("Delete the session value", async () => {
+      const body = new FormData();
+      body.append("method", "DELETE");
+      const response = await fetch(`${BASE_URL}`, {
+        method: "POST",
+        body,
+      });
+      const text = await response.text();
+      assert(
+        text.includes("<div>Flash Message: Delete value!</div>"),
+      );
+      assert(text.includes(`<div>Now Session Value: </div>`));
+      assertEquals(response.status, Status.OK);
+    });
+
+    await t.step("Visit again to verify session value is gone", async () => {
+      const response = await fetch(`${BASE_URL}`);
+      const text = await response.text();
+      assert(
+        text.includes(
+          "<div>Flash Message: </div><div>Now Session Value: </div>",
+        ),
+      );
+      assertEquals(response.status, Status.OK);
+    });
+
     await t.step("The 404 page should 404", async () => {
       const response = await fetch(`${BASE_URL}/404`);
       assertEquals(response.status, Status.NotFound);

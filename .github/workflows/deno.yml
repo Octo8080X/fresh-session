@@ -20,32 +20,22 @@ jobs:
       DENO_ENV: testing
       BASE_URL: http://localhost:8000
       DENO_DIR: deno_dir
-      APP_KEY: thisappkeyisherefortestingpurposes
+      APP_KEY: not-secret-at-all
     steps:
       - name: Setup repo
         uses: actions/checkout@v3
 
-      # - name: Setup .env secrets file
-      #   run: echo $ENV_GITHUB_ACTIONS | base64 -d > .env
-      #   env:
-      #     ENV_GITHUB_ACTIONS: ${{ secrets.ENV_GITHUB_ACTIONS }}
-
       - name: Setup Deno
-        # uses: denoland/setup-deno@v1
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.31.1
+          deno-version: v1.35.2
           
-      - name: Verify formatting
+      - name: Verify formatting   
         run: deno fmt --check
-
-      # - name: Run linter
-      #   run: deno lint
       
       - name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
-          # The Chrome install gets cached in here too...
           key: denoDeps-${{ hashFiles('deno.lock') }}
           path: ${{ env.DENO_DIR }}
 

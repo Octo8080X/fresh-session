@@ -1,6 +1,6 @@
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
 import { kvSession, WithSession } from "fresh-session/mod.ts";
-import { PORT } from "@/main.ts";
+import { PORT } from "../main.ts";
 export type State = WithSession;
 
 async function sessionHundler(

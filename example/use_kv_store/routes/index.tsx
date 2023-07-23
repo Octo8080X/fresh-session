@@ -6,6 +6,7 @@ export type SessionData = { session: Record<string, string>; message?: string };
 export const handler: Handlers<SessionData, WithSession> = {
   GET(_req: Request, ctx: HandlerContext<SessionData, WithSession>) {
     const { session } = ctx.state;
+    // console.log(session);
     const message = session.flash("message");
 
     return ctx.render({
@@ -43,11 +44,12 @@ export default function Index({ data }: PageProps<SessionData>) {
   return (
     <>
       <Head>
-        <title>frash-session example[redis in use]</title>
+        <title>frash-session example[denoKV in use]</title>
       </Head>
       <div>
-        <div>Flash Message: {data.message}</div>
-        <div>Now Session Value: {data.session.text}</div>
+        {/* <div>Flash Message: {data.message}</div> */}
+        {/* <div>Now Session Value: {data.session.text}</div> */}
+        <pre>{JSON.stringify(data, null, 2)}</pre>
         <div>
           <form method="POST" action="/">
             <div>

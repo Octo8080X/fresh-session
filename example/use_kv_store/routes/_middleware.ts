@@ -14,6 +14,9 @@ async function sessionHundler(
   if (req.url === `http://localhost:${ctx.localAddr?.port}/`) {
     return session(req, ctx);
   }
+  if (req.url === `http://localhost:8000/`) {
+    return session(req, ctx);
+  }
   return ctx.next();
 }
 export const handler = [sessionHundler];

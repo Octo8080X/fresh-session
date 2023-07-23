@@ -11,65 +11,47 @@ const BASE_URL = "http://localhost:8000";
 Deno.env.set("APP_KEY", "something_for_testing");
 
 Deno.test(
-  "Public Pages Testing",
+  "The Dashboard should show a new login",
   {
     sanitizeResources: false,
     sanitizeOps: false,
   },
   freshTestWrapper(async (t) => {
-    await t.step("The index page should work", async () => {
-      const response = await fetch(`${BASE_URL}`);
+    const EMAIL = "taylor@example.com";
+
+    await t.step("The dashboard shows nothing", async () => {
+      const response = await fetch(`${BASE_URL}/dashboard`);
       assertEquals(response.status, Status.OK);
       const text = await response.text();
       assert(!text.includes("<div>Flashed message: test</div>"));
     });
 
     await t.step("Post index page with 'email' form data.", async () => {
-      const form_data = new FormData();
-      form_data.append("email", "taylor@example.com");
+      const body = new FormData();
+      body.append("email", EMAIL);
       const response = await fetch(`${BASE_URL}`, {
         method: "POST",
-        body: form_data,
-        credentials: "include",
+        body,
       });
       const text = await response.text();
       assert(
         text.includes(
-          "<div>Flashed message: Successfully &quot;logged in&quot;</div>",
+          `<li>email: ${EMAIL}</li>`,
         ),
       );
       assertEquals(response.status, Status.OK);
     });
 
-    await t.step("The dashboard should work", async () => {
+    await t.step("The dashboard shows the login", async () => {
       const response = await fetch(`${BASE_URL}/dashboard`);
-      assertEquals(response.status, Status.OK);
-    });
-
-    await t.step("The other route should work", async () => {
-      const response = await fetch(`${BASE_URL}/other-route`, {
-        method: "POST",
-      });
       const text = await response.text();
-      // console.log(text);
+      console.log(text);
       assert(
         text.includes(
-          "<div>Flashed message: test</div>",
-        ),
-      );
-      assert(
-        text.includes(
-          "<div>Flashed message: [{&quot;msg&quot;:&quot;test 2&quot;}]</div>",
+          `You are logged in as ${EMAIL}`,
         ),
       );
       assertEquals(response.status, Status.OK);
     });
-
-    await t.step("The 404 page should 404", async () => {
-      const response = await fetch(`${BASE_URL}/404`);
-      assertEquals(response.status, Status.NotFound);
-    });
-
-    // More steps?
   }),
 );

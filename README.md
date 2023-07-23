@@ -60,8 +60,6 @@ interacting with your session.
 
 ```tsx
 // ./routes/dashboard.tsx
-/** @jsx h */
-import { h } from "preact";
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { WithSession } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
 

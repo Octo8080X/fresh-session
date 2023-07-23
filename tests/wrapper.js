@@ -1,5 +1,5 @@
-import { delay } from "https://deno.land/std@0.192.0/async/delay.ts";
-import { startFreshServer } from "https://deno.land/x/fresh@1.3.1/tests/test_utils.ts";
+import { delay } from "$std/async/delay.ts";
+import { startFreshServer } from "$fresh/tests/test_utils.ts";
 
 export const freshTestWrapper = (theTests) => async (t) => {
   const { serverProcess, lines } = await startFreshServer({

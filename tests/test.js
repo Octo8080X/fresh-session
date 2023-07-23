@@ -1,8 +1,14 @@
 import { freshTestWrapper } from "./wrapper.js";
-import { assertEquals } from "https://deno.land/std@0.195.0/assert/assert_equals.ts";
-import { Status } from "https://deno.land/std@0.195.0/http/http_status.ts";
+import { assertEquals } from "$std/assert/assert_equals.ts";
+import { assert } from "$std/assert/assert.ts";
+import { Status } from "$std/http/http_status.ts";
+import { wrapFetch } from "cookiejar";
+
+const fetch = wrapFetch();
 
 const BASE_URL = "http://localhost:8000";
+
+Deno.env.set("APP_KEY", "something_for_testing");
 
 Deno.test(
   "Public Pages Testing",
@@ -10,9 +16,28 @@ Deno.test(
     sanitizeResources: false,
     sanitizeOps: false,
   },
-  freshTestWrapper(async (t, page) => {
-    await t.step("The homepage should work", async () => {
+  freshTestWrapper(async (t) => {
+    await t.step("The index page should work", async () => {
       const response = await fetch(`${BASE_URL}`);
+      assertEquals(response.status, Status.OK);
+      const text = await response.text();
+      assert(!text.includes("<div>Flashed message: test</div>"));
+    });
+
+    await t.step("Post index page with 'email' form data.", async () => {
+      const form_data = new FormData();
+      form_data.append("email", "taylor@example.com");
+      const response = await fetch(`${BASE_URL}`, {
+        method: "POST",
+        body: form_data,
+        credentials: "include",
+      });
+      const text = await response.text();
+      assert(
+        text.includes(
+          "<div>Flashed message: Successfully &quot;logged in&quot;</div>",
+        ),
+      );
       assertEquals(response.status, Status.OK);
     });
 
@@ -25,6 +50,18 @@ Deno.test(
       const response = await fetch(`${BASE_URL}/other-route`, {
         method: "POST",
       });
+      const text = await response.text();
+      // console.log(text);
+      assert(
+        text.includes(
+          "<div>Flashed message: test</div>",
+        ),
+      );
+      assert(
+        text.includes(
+          "<div>Flashed message: [{&quot;msg&quot;:&quot;test 2&quot;}]</div>",
+        ),
+      );
       assertEquals(response.status, Status.OK);
     });
 

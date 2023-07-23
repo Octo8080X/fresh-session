@@ -47,9 +47,9 @@ export default function Index({ data }: PageProps<SessionData>) {
         <title>frash-session example[denoKV in use]</title>
       </Head>
       <div>
-        {/* <div>Flash Message: {data.message}</div> */}
-        {/* <div>Now Session Value: {data.session.text}</div> */}
-        <pre>{JSON.stringify(data, null, 2)}</pre>
+        {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
+        <div>Flash Message: {data.message}</div>
+        <div>Session Value: ${data.session.text}</div>
         <div>
           <form method="POST" action="/">
             <div>

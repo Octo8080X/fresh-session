@@ -1,11 +1,9 @@
-import { freshTestWrapper } from "./wrapper.js";
+import { BASE_URL, freshTestWrapper } from "./wrapper.js";
 import { assert, assertEquals } from "$std/assert/mod.ts";
 import { Status } from "$std/http/http_status.ts";
 import { wrapFetch } from "cookiejar";
 
 const fetch = wrapFetch();
-
-const BASE_URL = "http://localhost:8000";
 
 Deno.env.set("APP_KEY", "something_for_testing");
 

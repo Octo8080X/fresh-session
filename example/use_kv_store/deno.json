@@ -15,6 +15,7 @@
     "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.0.1",
     "twind": "https://esm.sh/twind@0.16.17",
     "twind/": "https://esm.sh/twind@0.16.17/",
+    "@/": "./",
     "fresh-session/": "https://raw.githubusercontent.com/Octo8080X/fresh-session/main/"
   },
   "lock": false

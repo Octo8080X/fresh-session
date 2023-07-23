@@ -1,6 +1,7 @@
 import { MiddlewareHandlerContext } from "$fresh/server.ts";
 import { redisSession, WithSession } from "fresh-session/mod.ts";
 import { connect } from "redis/mod.ts";
+import { PORT } from "../main.ts";
 export type State = WithSession;
 
 const redis = await connect({
@@ -15,6 +16,9 @@ const session = redisSession(redis, {
 
 function sessionHundler(req: Request, ctx: MiddlewareHandlerContext<State>) {
   if (req.url === `http://localhost:${ctx.localAddr?.port}/`) {
+    return session(req, ctx);
+  }
+  if (req.url === `http://localhost:${PORT}/`) {
     return session(req, ctx);
   }
   return ctx.next();

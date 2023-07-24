@@ -15,7 +15,7 @@ export function key() {
 
   if (!key) {
     console.warn(
-      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue."
+      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue.",
     );
   }
 
@@ -24,7 +24,7 @@ export function key() {
     new TextEncoder().encode(key || "not-secret"),
     { name: "HMAC", hash: "SHA-512" },
     false,
-    ["sign", "verify"]
+    ["sign", "verify"],
   );
 }
 
@@ -79,7 +79,7 @@ export class CookieSessionStorage {
       value: await create(
         { alg: "HS512", typ: "JWT" },
         { ...session.data, _flash: session.flashedData },
-        this.#key
+        this.#key,
       ),
       path: "/",
       ...this.#cookieOptions,
@@ -90,19 +90,22 @@ export class CookieSessionStorage {
   /**
    * Does not work in cookie sessions.
    */
-  keyRotate(){
-    console.warn("%c*****************************************************\n* '.keyRotate' is not supported for cookie sessions *\n*****************************************************", "color: yellow;")
+  keyRotate() {
+    console.warn(
+      "%c*****************************************************\n* '.keyRotate' is not supported for cookie sessions *\n*****************************************************",
+      "color: yellow;",
+    );
   }
 }
 
 export function cookieSession(cookieOptions?: CookieOptions) {
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>
+    ctx: MiddlewareHandlerContext<WithSession>,
   ) {
     const { sessionId } = getCookies(req.headers);
     const cookieSessionStorage = await createCookieSessionStorage(
-      cookieOptions
+      cookieOptions,
     );
 
     if (sessionId && (await cookieSessionStorage.exists(sessionId))) {

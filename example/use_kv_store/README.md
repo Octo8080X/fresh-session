@@ -1,6 +1,6 @@
-# Use Redis store sample
+# Use KV store sample
 
-This project is fresh project used fresh-session with redis store.
+This project is fresh project used fresh-session with a KV store
 
 ## Usage
 

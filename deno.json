@@ -1,6 +1,12 @@
 {
   "tasks": {
-    "fixture": "deno run -A --watch=static/,routes/ tests/fixture/dev.ts"
+    "fixture": "deno run -A --watch=tests/fixture/static/,tests/fixture/routes/ tests/fixture/dev.ts",
+    "kv": "deno run -A --unstable --watch=example/use_kv_store/static/,example/use_kv_store/routes/ example/use_kv_store/dev.ts"
   },
-  "importMap": "./tests/fixture/import_map.json"
+  "imports": {
+    "$fresh/": "https://deno.land/x/fresh@1.3.1/",
+    "$std/": "https://deno.land/std@0.195.0/",
+    "cookiejar": "https://deno.land/x/another_cookiejar@v5.0.3/mod.ts"
+  },
+  "lock": false
 }

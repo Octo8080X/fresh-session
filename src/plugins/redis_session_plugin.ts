@@ -5,8 +5,7 @@ import type {
 } from "../deps.ts";
 import { Store, redisSession } from "../stores/redis.ts";
 import { CookieOptions } from "../stores/cookie_option.ts";
-
-export type sessionModule =(req: Request, ctx: MiddlewareHandlerContext) => Promise<Response>
+import { sessionModule } from "../stores/interface.ts";
 
 export function getRedisSessionHandler(session: sessionModule, excludePath: string[]): MiddlewareHandler {
   return function (req: Request, ctx: MiddlewareHandlerContext) {

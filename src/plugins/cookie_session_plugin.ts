@@ -5,8 +5,7 @@ import type {
 } from "../deps.ts";
 import { cookieSession } from "../stores/cookie.ts";
 import { CookieOptions } from "../stores/cookie_option.ts";
-
-export type sessionModule =(req: Request, ctx: MiddlewareHandlerContext) => Promise<Response>
+import { sessionModule } from "../stores/interface.ts";
 
 export function getCookieSessionHandler(session: sessionModule, excludePath: string[]): MiddlewareHandler {
   return function (req: Request, ctx: MiddlewareHandlerContext) {

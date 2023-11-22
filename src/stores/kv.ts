@@ -129,7 +129,7 @@ function hasKeyPrefix(
 }
 
 export function kvSession(
-  storePath: string | null,
+  storePath: string|null,
   cookieWithRedisOptions?: CookieWithRedisOptions,
 ) {
   let setupKeyPrefix = "session_";
@@ -143,7 +143,7 @@ export function kvSession(
 
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>,
+    ctx: MiddlewareHandlerContext,
   ) {
     const { sessionId } = getCookies(req.headers);
 
@@ -164,7 +164,7 @@ export function kvSession(
     }
     const response = await ctx.next();
 
-    const persistedResponse = kvSessionStorage.persist(
+    const persistedResponse = await kvSessionStorage.persist(
       response,
       ctx.state.session,
     );

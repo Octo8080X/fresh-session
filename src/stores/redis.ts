@@ -8,7 +8,7 @@ import { type CookieOptions, CookieWithRedisOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
 import type { WithSession } from "./interface.ts";
 
-interface Store {
+export interface Store {
   set: Function;
   get: Function;
   del: Function;
@@ -148,7 +148,7 @@ export function redisSession(
 
   return async function (
     req: Request,
-    ctx: MiddlewareHandlerContext<WithSession>,
+    ctx: MiddlewareHandlerContext,
   ) {
     const { sessionId } = getCookies(req.headers);
     const redisSessionStorage = await createRedisSessionStorage(

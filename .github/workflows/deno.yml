@@ -41,7 +41,7 @@ jobs:
         run: ls -la
       
       - name: Move deno.json
-        run: mv ./test/work/deno.json ./deno.json
+        run: mv ./tests/work/deno.json ./deno.json
 
       - name: ls 2
         run: ls -la

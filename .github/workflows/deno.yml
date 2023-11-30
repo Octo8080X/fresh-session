@@ -34,6 +34,8 @@ jobs:
       - name: Install Fresh
         run:  deno run -A https://fresh.deno.dev ./tests/work --force --twind --vscode
       
+      - neme: ls
+        run: ls -la
 #      - name: Cache Deno dependencies
 #        uses: actions/cache@v3
 #        with:
@@ -41,4 +43,4 @@ jobs:
 #          path: ${{ env.DENO_DIR }}
 
       - name: Run tests
-        run: deno test  --unstable -A
+        run: deno test --unstable -A

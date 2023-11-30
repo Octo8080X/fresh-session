@@ -1,67 +1,81 @@
-export class Session {
-  #data = new Map();
-  #flash = new Map();
-  #doDelete = false;
-  #doKeyRotate = false;
+import type {
+  AllowType,
+  FlashData,
+  Session,
+  SessionData,
+  SessionDuplicationData,
+} from "./type.ts";
 
-  constructor(data = {}, flash = {}) {
-    this.#data = new Map(Object.entries(data));
-    this.#flash = new Map(Object.entries(flash));
-  }
+export function createSession<T extends string, F extends string>(
+  { session, flash }: { session: SessionData<T>; flash: FlashData<F> },
+): {
+  session: Session<T, F>;
+  getDuplicateDataFunction: { (): SessionDuplicationData<T, F> };
+} {
+  let sessionData: SessionData<T> = (session || {}) as SessionData<T>;
+  const flashData: FlashData<F> = (flash || {}) as FlashData<F>;
+  const newFlashData: FlashData<F> = {} as FlashData<F>;
+  const operations = {
+    doDestroy: false,
+    doRotateKey: false,
+  };
 
-  get data() {
-    return Object.fromEntries(this.#data);
-  }
+  let duplicateData: SessionDuplicationData<T, F> | null = null;
 
-  get flashedData() {
-    return Object.fromEntries(this.#flash);
-  }
+  const sessionObj: Session<T, F> = {
+    get(key) {
+      return sessionData[key];
+    },
+    set(key, value) {
+      sessionData[key] = value;
+      duplicateData = this.getRawData();
+    },
+    delete(key) {
+      const { [key]: _removed, ...res } = sessionData;
+      sessionData = res as SessionData<T>;
+      duplicateData = this.getRawData();
+    },
+    list() {
+      return sessionData;
+    },
+    destroy() {
+      operations.doDestroy = true;
+      duplicateData = this.getRawData();
+    },
+    rotateKey() {
+      operations.doRotateKey = true;
+      duplicateData = this.getRawData();
+    },
+    has(key) {
+      return key in sessionData;
+    },
+    clear() {
+      sessionData = {} as SessionData<T>;
+      duplicateData = this.getRawData();
+    },
+    flash(key: F, value?: AllowType) {
+      if (value === undefined) {
+        return flashData[key];
+      }
+      newFlashData[key] = value;
+      duplicateData = this.getRawData();
+    },
+    flashNow(key: F) {
+      const value = { ...flashData, ...newFlashData }[key]!
+      delete newFlashData[key];
+      duplicateData = this.getRawData();
+      return value;
+    },
+    getRawData() {
+      return { session: sessionData, flash: newFlashData, operations };
+    },
+  };
+  duplicateData = sessionObj.getRawData();
 
-  get doDelete() {
-    return this.#doDelete;
-  }
-
-  get doKeyRotate() {
-    return this.#doKeyRotate;
-  }
-
-  set(key: string, value: any) {
-    this.#data.set(key, value);
-
-    return this;
-  }
-
-  get(key: string) {
-    return this.#data.get(key);
-  }
-
-  has(key: string) {
-    return this.#data.has(key);
-  }
-
-  clear() {
-    this.#data.clear();
-    return this;
-  }
-
-  flash(key: string, value?: any) {
-    if (value === undefined) {
-      const flashedValue = this.#flash.get(key);
-
-      this.#flash.delete(key);
-
-      return flashedValue;
-    }
-    this.#flash.set(key, value);
-
-    return this;
-  }
-
-  destroy() {
-    this.#doDelete = true;
-  }
-
-  keyRotate() {
-    this.#doKeyRotate = true;
-  }
+  return {
+    session: sessionObj,
+    getDuplicateDataFunction: () => {
+      return duplicateData!;
+    },
+  };
 }

@@ -4,7 +4,7 @@ import {
 } from "https://deno.land/x/fresh@1.5.4/server.ts";
 import manifest from "./work/fresh.gen.ts";
 import config from "./config/cookie_session_test_plugin_fresh.config.ts";
-import { assert, assertEquals } from "$std/testing/asserts.ts";
+import {assertEquals} from "../deps.ts";
 
 const CONN_INFO: ServeHandlerInfo = {
   remoteAddr: { hostname: "127.0.0.1", port: 53496, transport: "tcp" },

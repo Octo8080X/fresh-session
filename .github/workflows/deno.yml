@@ -16,31 +16,34 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-#    env:
-#      DENO_ENV: testing
-#      BASE_URL: http://localhost:8000
-#      DENO_DIR: deno_dir
-#      APP_KEY: not-secret-at-all
+    #    env:
+    #      DENO_ENV: testing
+    #      BASE_URL: http://localhost:8000
+    #      DENO_DIR: deno_dir
+    #      APP_KEY: not-secret-at-all
     steps:
       - name: Setup repo
         uses: actions/checkout@v3
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
-          
-      - name: Verify formatting   
+
+      - name: Check version
+        run: deno -V
+
+      - name: Verify formatting
         run: deno fmt --check
 
       - name: Install Fresh
-        run:  deno run -A https://fresh.deno.dev ./tests/work --force --twind --vscode
-      
+        run: deno run -A https://fresh.deno.dev ./tests/work --force --twind --vscode
+
       - name: ls
         run: ls -la
-#      - name: Cache Deno dependencies
-#        uses: actions/cache@v3
-#        with:
-#          key: denoDeps-${{ hashFiles('deno.lock') }}
-#          path: ${{ env.DENO_DIR }}
+      #      - name: Cache Deno dependencies
+      #        uses: actions/cache@v3
+      #        with:
+      #          key: denoDeps-${{ hashFiles('deno.lock') }}
+      #          path: ${{ env.DENO_DIR }}
 
       - name: Run tests
         run: deno test --unstable -A

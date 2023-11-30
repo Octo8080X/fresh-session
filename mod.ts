@@ -7,4 +7,5 @@ export type {
   RedisFreshSessionOptions,
   Session,
   WithSession,
+  PartialCookieOptions
 } from "./src/type.ts";

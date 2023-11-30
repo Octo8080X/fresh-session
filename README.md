@@ -4,53 +4,93 @@ Dead simple cookie-based session for [Deno Fresh](https://fresh.deno.dev).
 
 ## Get started
 
-Fresh Session comes with a simple middleware to add at the root of your project,
-which will create or resolve a session from the request cookie.
+Fresh Session provides plug-ins that add Session functionality.
 
-### Install / Import
+## Install / Import
 
 You can import Fresh Session like so:
 
 ```ts
 import {
-  cookieSession,
-  CookieSessionStorage,
-  createCookieSessionStorage,
-  Session,
-  WithSession,
-} from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
+  getCookieSessionPlugin,
+  getRedisSessionPlugin,
+  getDenoKvSessionPlugin
+  type CookieFreshSessionOptions,
+  type DenoKvFreshSessionOptions,
+  type RedisFreshSessionOptions,
+  type Session,
+  type WithSession,
+} from "https://deno.land/x/fresh_session@beta-0.3.0/mod.ts";
 ```
 
-### Setup secret key
+## Usage
+
+### JWT-based Cookie Session
+
+```ts
+// fresh.config.ts
+import { defineConfig } from "$fresh/server.ts";
+import twindPlugin from "$fresh/plugins/twind.ts";
+import twindConfig from "./twind.config.ts";
+
+import { getCookieSessionPlugin} from "../fresh-session-next/mod.ts";
+
+export default defineConfig({
+  plugins: [
+    twindPlugin(twindConfig),
+    getCookieSessionPlugin("/"),
+  ],
+});
+```
+
+**⚠ Setup secret key**
 
 Fresh Session currently uses [JSON Web Token](https://jwt.io/) under the hood to
 create and manage session in the cookies.
 
 JWT requires a secret key to sign new tokens. Fresh Session uses the secret key
 from your [environment variable](https://deno.land/std/dotenv/load.ts)
-`APP_KEY`.
+`APP_SESSION_CRYPTO_KEY`.
 
-If you don't know how to setup environment variable locally, I wrote
-[an article about .env file in Deno Fresh](https://xstevenyung.com/blog/read-.env-file-in-deno-fresh).
-
-### Create a root middleware (`./routes/_middleware.ts`)
+### Sessions using Redis as the backend
 
 ```ts
-import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { cookieSession, WithSession } from "fresh-session";
+// fresh.config.ts
+import { defineConfig } from "$fresh/server.ts";
+import twindPlugin from "$fresh/plugins/twind.ts";
+import twindConfig from "./twind.config.ts";
 
-export type State = {} & WithSession;
+import { getRedisSessionPlugin } from "../fresh-session-next/mod.ts";
 
-const session = cookieSession();
+// any redis client. ex. ioredis-mock, redis, upstash-redis
+import Redis from 'https://unpkg.com/ioredis-mock';
+const redis = new Redis()
 
-function sessionHandler(req: Request, ctx: MiddlewareHandlerContext<State>) {
-  return session(req, ctx);
-}
-export const handler = [sessionHandler];
+export default defineConfig({
+  plugins: [
+    twindPlugin(twindConfig),
+    getRedisSessionPlugin("/", {client: redis}),
+  ],
+});
 ```
 
-Learn more about
-[Fresh route middleware](https://fresh.deno.dev/docs/concepts/middleware).
+### Sessions using Deno.KV as the backend
+
+```ts
+// fresh.config.ts
+import { defineConfig } from "$fresh/server.ts";
+import twindPlugin from "$fresh/plugins/twind.ts";
+import twindConfig from "./twind.config.ts";
+
+import { getDenoKvSessionPlugin} from "../fresh-session-next/mod.ts";
+
+export default defineConfig({
+  plugins: [
+    twindPlugin(twindConfig),
+    getDenoKvSessionPlugin("/", {client: await Deno.openKv(":memory:")}),
+  ],
+});
+```
 
 ### Interact with the session in your routes
 
@@ -61,49 +101,50 @@ interacting with your session.
 ```tsx
 // ./routes/dashboard.tsx
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { WithSession } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
-
-export type Data = { session: Record<string, string> };
+import type { WithSession } from "https://deno.land/x/fresh_session@beta-0.3.0/mod.ts";
 
 export const handler: Handlers<
-  Data,
-  WithSession // indicate with Typescript that the session is in the `ctx.state`
+  unknown,
+  WithSession<"KEY_A" | "KEY_B" | "KEY_C", "success">
 > = {
   GET(_req, ctx) {
     // The session is accessible via the `ctx.state`
     const { session } = ctx.state;
 
-    // Access data stored in the session
-    session.get("email");
-    // Set new value in the session
-    session.set("email", "hello@deno.dev");
-    // returns `true` if the session has a value with a specific key, else `false`
-    session.has("email");
-    // clear all the session data
+    // Session methods
+    // Set session value set.
+    session.set("KEY_A", "SESSION-DATA");
+    // get session value.
+    session.get("KEY_A");
+    // Verify session key registration status.
+    session.has("KEY_A");
+    // Session value delete.
+    session.delete("KEY_A")
+    // Get session values all.
+    session.list()
+    // Session values clear.
     session.clear();
-    // Access all session data value as an object
-    session.data;
-    // Add flash data which will disappear after accessing it
+
+
+    // Session operation methods
+    // Destroy session key and data.
+    session.destroy()
+    // Session key rotate.
+    session.rotateKey()
+
+    // Flash method
+    // The data set in flash can be used for the next access.
     session.flash("success", "Successfully flashed a message!");
-    // Accessing the flashed data
-    // /!\ This flashed data will disappear after accessing it one time.
     session.flash("success");
-    // Session Key Rotation only kv store and redis store.
-    // Is not work in cookie store.
+    // If you want to use the set value in the access, use 'flashNow'.
+    session.flashNow("success");
 
-    // Rotate the session key. Only supported by the kv store and redis store, not the cookie store.
-    // If using the session for authentication, with a kv or redis store, it is recommended to rotate the key at login to prevent session fixation attack.
-    // The cookie store is immune from this issue.
-    session.keyRotate();
-
-    return ctx.render({
-      session: session.data, // You can pass the whole session data to the page
-    });
+    return ctx.render();
   },
 };
 
-export default function Dashboard({ data }: PageProps<Data>) {
-  return <div>You are logged in as {data.session.email}</div>;
+export default function Dashboard(props: PageProps<unknown, WithSession<"KEY_A" | "KEY_B" | "KEY_C", "success">>) {
+  return <div>Session Data [KEY_A]: {props.state.session.get("KEY_A")}</div>;
 }
 ```
 
@@ -112,57 +153,32 @@ export default function Dashboard({ data }: PageProps<Data>) {
 session value is cookie. can set the option for cookie.
 
 ```ts
-import { cookieSession } from "fresh-session";
+import { PartialCookieOptions } from "https://deno.land/x/fresh_session@beta-0.3.0/mod.ts";
 
-export const handler = [
-  cookieSession({
-    maxAge: 30, //Session keep is 30 seconds.
-    httpOnly: true,
-  }),
-];
-```
+// type PartialCookieOptions = {
+//   maxAge?: number | undefined;
+//   domain?: string | undefined;
+//   path?: string | undefined;
+//   secure?: boolean | undefined;
+//   httpOnly?: boolean | undefined;
+//   sameSite?: "Strict" | "Lax" | "None" | undefined;
+// }
 
-## cookie session based on Redis
+import { defineConfig } from "$fresh/server.ts";
+import twindPlugin from "$fresh/plugins/twind.ts";
+import twindConfig from "./twind.config.ts";
 
-In addition to JWT, values can be stored in Redis.
+import { getDenoKvSessionPlugin } from "[../fresh-session-next/mod.ts](https://deno.land/x/fresh_session@beta-0.3.0/mod.ts)";
 
-```ts
-import { redisSession } from "fresh-session/mod.ts";
-import { connect } from "redis/mod.ts";
-
-const redis = await connect({
-  hostname: "something redis server",
-  port: 6379,
-});
-
-export const handler = [redisSession(redis)];
-
-// or Customizable cookie options and Redis key prefix
-
-export const handler = [
-  redisSession(redis, {
-    keyPrefix: "S_",
-    maxAge: 10,
-  }),
-];
-```
-
-## FAQ &amp; Troubleshooting Errors
-
-Some common questions and troubleshooting errors.
-
-### "TypeError: Headers are immutable."
-
-If you are receiving this error, you are likely using a Response.redirect, which
-makes the headers immutable. A workaround for this is to use the following
-instead:
-
-```ts
-new Response(null, {
-  status: 302,
-  headers: {
-    Location: "your-url",
-  },
+export default defineConfig({
+  plugins: [
+    twindPlugin(twindConfig),
+    getDenoKvSessionPlugin("/", {
+        client: await Deno.openKv(":memory:"),
+        cookieOptions:{maxAge: 60 * 10}
+      }
+    ),
+  ],
 });
 ```
 

@@ -16,11 +16,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    #    env:
-    #      DENO_ENV: testing
-    #      BASE_URL: http://localhost:8000
-    #      DENO_DIR: deno_dir
-    #      APP_KEY: not-secret-at-all
     steps:
       - name: Setup repo
         uses: actions/checkout@v3
@@ -36,20 +31,9 @@ jobs:
 
       - name: Install Fresh
         run: deno run -A https://fresh.deno.dev ./tests/work --force --twind --vscode
-
-      - name: ls 1
-        run: ls -la
       
       - name: Move deno.json
         run: mv ./tests/work/deno.json ./deno.json
-
-      - name: ls 2
-        run: ls -la
-      #      - name: Cache Deno dependencies
-      #        uses: actions/cache@v3
-      #        with:
-      #          key: denoDeps-${{ hashFiles('deno.lock') }}
-      #          path: ${{ env.DENO_DIR }}
 
       - name: Run tests
         run: deno test --unstable -A

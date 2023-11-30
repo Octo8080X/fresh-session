@@ -37,7 +37,13 @@ jobs:
       - name: Install Fresh
         run: deno run -A https://fresh.deno.dev ./tests/work --force --twind --vscode
 
-      - name: ls
+      - name: ls 1
+        run: ls -la
+      
+      - name: Move deno.json
+        run: mv ./test/work/deno.json ./deno.json
+
+      - name: ls 2
         run: ls -la
       #      - name: Cache Deno dependencies
       #        uses: actions/cache@v3

@@ -61,7 +61,7 @@ export function createSession<T extends string, F extends string>(
       duplicateData = this.getRawData();
     },
     flashNow(key: F) {
-      const value = { ...flashData, ...newFlashData }[key]!
+      const value = { ...flashData, ...newFlashData }[key]!;
       delete newFlashData[key];
       duplicateData = this.getRawData();
       return value;

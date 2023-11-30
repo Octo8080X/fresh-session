@@ -56,7 +56,7 @@ export interface FreshSessionBaseOptions {
   excludePath?: string[];
 }
 
-export type CookieFreshSessionOptions = FreshSessionBaseOptions
+export type CookieFreshSessionOptions = FreshSessionBaseOptions;
 
 export interface RequiredCookieFreshSessionOptions
   extends Required<CookieFreshSessionOptions> {

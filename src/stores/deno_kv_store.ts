@@ -103,7 +103,10 @@ export async function getDenoKvSession<T extends string, F extends string>(
 ): Promise<{
   session: Session<T, F>;
   sessionCookieSetter: {
-    (res: Response, cookieOptions: RequiredCookieOptions): Response | Promise<Response>;
+    (
+      res: Response,
+      cookieOptions: RequiredCookieOptions,
+    ): Response | Promise<Response>;
   };
 }> {
   console.log({

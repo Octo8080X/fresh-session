@@ -1,13 +1,16 @@
 # This workflow will install Deno then run Deno fmt and test.
 # For more information see: https://github.com/denoland/setup-deno
 
-name: Deno Deploy & Test
+name: Test
 
 on:
   push:
     branches: ["main", "test"]
   pull_request:
     branches: ["main", "test"]
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
 
 permissions:
   id-token: write # This is required to allow the GitHub Action to authenticate with Deno Deploy.

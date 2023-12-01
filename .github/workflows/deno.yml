@@ -33,7 +33,7 @@ jobs:
         run: deno fmt --check
 
       - name: Install Fresh
-        run: deno run -A https://fresh.deno.dev ./tests/work --force --twind --vscode
+        run: deno run -A  https://deno.land/x/fresh@1.5.4/init.ts ./tests/work --force --twind --tailwind --vscode
       
       - name: Move deno.json
         run: mv ./tests/work/deno.json ./deno.json

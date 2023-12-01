@@ -33,7 +33,7 @@ import { defineConfig } from "$fresh/server.ts";
 import twindPlugin from "$fresh/plugins/twind.ts";
 import twindConfig from "./twind.config.ts";
 
-import { getCookieSessionPlugin} from "../fresh-session-next/mod.ts";
+import { getCookieSessionPlugin } from "../fresh-session-next/mod.ts";
 
 export default defineConfig({
   plugins: [
@@ -63,13 +63,13 @@ import twindConfig from "./twind.config.ts";
 import { getRedisSessionPlugin } from "../fresh-session-next/mod.ts";
 
 // any redis client. ex. ioredis-mock, redis, upstash-redis
-import Redis from 'https://unpkg.com/ioredis-mock';
-const redis = new Redis()
+import Redis from "https://unpkg.com/ioredis-mock";
+const redis = new Redis();
 
 export default defineConfig({
   plugins: [
     twindPlugin(twindConfig),
-    getRedisSessionPlugin("/", {client: redis}),
+    getRedisSessionPlugin("/", { client: redis }),
   ],
 });
 ```
@@ -82,12 +82,12 @@ import { defineConfig } from "$fresh/server.ts";
 import twindPlugin from "$fresh/plugins/twind.ts";
 import twindConfig from "./twind.config.ts";
 
-import { getDenoKvSessionPlugin} from "../fresh-session-next/mod.ts";
+import { getDenoKvSessionPlugin } from "../fresh-session-next/mod.ts";
 
 export default defineConfig({
   plugins: [
     twindPlugin(twindConfig),
-    getDenoKvSessionPlugin("/", {client: await Deno.openKv(":memory:")}),
+    getDenoKvSessionPlugin("/", { client: await Deno.openKv(":memory:") }),
   ],
 });
 ```
@@ -119,18 +119,17 @@ export const handler: Handlers<
     // Verify session key registration status.
     session.has("KEY_A");
     // Session value delete.
-    session.delete("KEY_A")
+    session.delete("KEY_A");
     // Get session values all.
-    session.list()
+    session.list();
     // Session values clear.
     session.clear();
 
-
     // Session operation methods
     // Destroy session key and data.
-    session.destroy()
+    session.destroy();
     // Session key rotate.
-    session.rotateKey()
+    session.rotateKey();
 
     // Flash method
     // The data set in flash can be used for the next access.
@@ -143,7 +142,12 @@ export const handler: Handlers<
   },
 };
 
-export default function Dashboard(props: PageProps<unknown, WithSession<"KEY_A" | "KEY_B" | "KEY_C", "success">>) {
+export default function Dashboard(
+  props: PageProps<
+    unknown,
+    WithSession<"KEY_A" | "KEY_B" | "KEY_C", "success">
+  >,
+) {
   return <div>Session Data [KEY_A]: {props.state.session.get("KEY_A")}</div>;
 }
 ```
@@ -174,10 +178,9 @@ export default defineConfig({
   plugins: [
     twindPlugin(twindConfig),
     getDenoKvSessionPlugin("/", {
-        client: await Deno.openKv(":memory:"),
-        cookieOptions:{maxAge: 60 * 10}
-      }
-    ),
+      client: await Deno.openKv(":memory:"),
+      cookieOptions: { maxAge: 60 * 10 },
+    }),
   ],
 });
 ```

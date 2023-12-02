@@ -1,7 +1,4 @@
-import {
-  createHandler,
-  ServeHandlerInfo,
-} from "$fresh/server.ts";
+import { createHandler, ServeHandlerInfo } from "$fresh/server.ts";
 import manifest from "./work/fresh.gen.ts";
 import config from "./config/redis_session_test_plugin_fresh.config.ts";
 import { assertEquals } from "../deps.ts";

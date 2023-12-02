@@ -1,7 +1,7 @@
 import {
   createHandler,
   ServeHandlerInfo,
-} from "https://deno.land/x/fresh@1.5.4/server.ts";
+} from "$fresh/server.ts";
 import manifest from "./work/fresh.gen.ts";
 import config from "./config/cookie_session_test_plugin_fresh.config.ts";
 import { assertEquals } from "../deps.ts";

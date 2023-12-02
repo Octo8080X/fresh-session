@@ -1,7 +1,6 @@
 import { createSession } from "../src/session.ts";
 import { assertEquals } from "https://deno.land/std@0.208.0/testing/asserts.ts";
 
-// テストコードを用意する
 Deno.test("Session", async (t) => {
   type SessionValueKeys = "KEY_A" | "KEY_B" | "KEY_C";
   type FlashValueKeys = "error" | "success";

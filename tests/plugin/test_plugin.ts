@@ -1,4 +1,4 @@
-import { PageProps, Plugin } from "https://deno.land/x/fresh@1.5.4/server.ts";
+import { PageProps, Plugin } from "$fresh/server.ts";
 import TestComponent from "../routes/session_test_route.tsx";
 import { ComponentType } from "preact";
 export const testPlugin: Plugin = {

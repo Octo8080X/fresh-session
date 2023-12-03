@@ -20,7 +20,7 @@ jobs:
       DENO_ENV: testing
       BASE_URL: http://localhost:8000
       DENO_DIR: deno_dir
-      APP_KEY: not-secret-at-all
+      APP_KEY: password-at-least-32-characters-long
     steps:
       - name: Setup repo
         uses: actions/checkout@v3

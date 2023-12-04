@@ -23,12 +23,13 @@ import {
 
 ### Setup secret key
 
-Fresh Session currently uses [JSON Web Token](https://jwt.io/) under the hood to
-create and manage session in the cookies.
+Fresh Session currently uses
+[iron-webcrypto](https://github.com/brc-dd/iron-webcrypto) encrypted cookie
+contents.
 
-JWT requires a secret key to sign new tokens. Fresh Session uses the secret key
-from your [environment variable](https://deno.land/std/dotenv/load.ts)
-`APP_KEY`.
+iron-webcrypto requires a secret key to encrypt the session payload. Fresh
+Session uses the secret key from your
+[environment variable](https://deno.land/std/dotenv/load.ts) `APP_KEY`.
 
 If you don't know how to setup environment variable locally, I wrote
 [an article about .env file in Deno Fresh](https://xstevenyung.com/blog/read-.env-file-in-deno-fresh).
@@ -124,7 +125,7 @@ export const handler = [
 
 ## cookie session based on Redis
 
-In addition to JWT, values can be stored in Redis.
+In addition to storing session data in cookies, values can be stored in Redis.
 
 ```ts
 import { redisSession } from "fresh-session/mod.ts";

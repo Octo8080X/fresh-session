@@ -33,6 +33,7 @@ Deno.test("Redis Session Test", async (t) => {
     text = await resp.text();
     assertEquals(text.includes("<p>count:1</p>"), true);
   });
+
   await t.step("Not Work Session(unset cookie)", async () => {
     let resp = await handler(
       new Request("http://127.0.0.1/session"),

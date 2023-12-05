@@ -38,7 +38,7 @@ async function sessionDataFromJwt<T extends string, F extends string>(
     return { session: session || {}, flash: flash || {} };
   } catch (e) {
     console.log(e);
-    console.warn("Invalid JWT token, creating new session...");
+    console.error("Invalid JWT token, creating new session...");
     return { session: {}, flash: {} };
   }
 }

@@ -19,14 +19,6 @@ async function sessionDataFromDenoKv<T extends string, F extends string>(
     ...baseKeyPath,
     sessionKey,
   ]);
-  console.log("sessionKey", sessionKey);
-  console.log("payload", payload);
-  console.log(
-    await client.get<string>([
-      ...baseKeyPath,
-      sessionKey,
-    ]),
-  );
 
   if (!payload) {
     return { session: {}, flash: {} };
@@ -71,19 +63,7 @@ function getSessionCookieSetterFunction<T extends string, F extends string>(
     }
 
     if (!operations.doDestroy) {
-      console.log(baseKeyPath);
-      console.log([...baseKeyPath, newSessionKey], payload, {
-        expireIn: cookieOptions.maxAge,
-      });
-
-      const RRRR = await client.set([...baseKeyPath, newSessionKey], payload, {
-        //expireIn: cookieOptions.maxAge * 1000,
-      });
-      console.log("RRRR", RRRR);
-      console.log(
-        "RRRR",
-        await client.get<SessionFromDenoKV>([...baseKeyPath, sessionKey]),
-      );
+      await client.set([...baseKeyPath, newSessionKey], payload, {expireIn: 0});
     }
 
     return setSessionText(res, newSessionKey, newCookieOptions);
@@ -109,13 +89,6 @@ export async function getDenoKvSession<T extends string, F extends string>(
     ): Response | Promise<Response>;
   };
 }> {
-  console.log({
-    req,
-    cookieName,
-    keyPrefix,
-    client,
-  });
-
   const sessionKey = getSessionPayloadFromCookie(req, cookieName);
 
   if (!sessionKey) {

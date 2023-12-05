@@ -47,5 +47,5 @@ jobs:
       - name: view coverage
         run: |
             deno install -A --no-check -n code-coverage https://deno.land/x/code_coverage/cli.ts &&
-            deno coverage --lcov --output=lcov.info ./coverage/ &&
+            deno coverage --exclude=tests/work/ --lcov --output=lcov.info ./coverage/ &&
             code-coverage --file lcov.info

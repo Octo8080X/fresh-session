@@ -37,7 +37,7 @@ async function sessionDataFromJwt<T extends string, F extends string>(
     const { session, flash } = payload;
     return { session: session || {}, flash: flash || {} };
   } catch (e) {
-    console.log(e);
+    console.error(e);
     console.error("Invalid JWT token, creating new session...");
     return { session: {}, flash: {} };
   }

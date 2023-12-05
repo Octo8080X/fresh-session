@@ -42,4 +42,10 @@ jobs:
         run: cat ./deno.json
 
       - name: Run tests
-        run: deno test --unstable -A
+        run: deno test --unstable --allow-read --allow-write --allow-env --allow-net --coverage=./coverage
+      
+      - name: view coverage
+        run: |
+            deno install -A --no-check -n code-coverage https://deno.land/x/code_coverage/cli.ts &&
+            deno coverage --lcov --output=lcov.info ./coverage/ &&
+            code-coverage --file lcov.info

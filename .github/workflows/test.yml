@@ -12,12 +12,10 @@ on:
     # Run every Monday at 00:00 UTC
     - cron: '0 0 * * 1'
 
-permissions:
-  id-token: write # This is required to allow the GitHub Action to authenticate with Deno Deploy.
-  contents: read
-
 jobs:
   test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo

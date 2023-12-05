@@ -129,7 +129,7 @@ function hasKeyPrefix(
 }
 
 export function kvSession(
-  storePath: string|null,
+  storePath: string | null,
   cookieWithRedisOptions?: CookieWithRedisOptions,
 ) {
   let setupKeyPrefix = "session_";

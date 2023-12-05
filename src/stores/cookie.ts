@@ -1,10 +1,10 @@
 import {
   getCookies,
-  MiddlewareHandlerContext,
-  setCookie,
-  seal,
-  unseal,
   ironDefaults,
+  MiddlewareHandlerContext,
+  seal,
+  setCookie,
+  unseal,
 } from "../deps.ts";
 import { type CookieOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
@@ -35,7 +35,12 @@ export class CookieSessionStorage {
   }
 
   exists(sessionId: string) {
-    return unseal(globalThis.crypto, sessionId, Deno.env.get('APP_KEY') as string, ironDefaults)
+    return unseal(
+      globalThis.crypto,
+      sessionId,
+      Deno.env.get("APP_KEY") as string,
+      ironDefaults,
+    )
       .then(() => true)
       .catch((e) => {
         console.warn("Invalid session, creating new session...");
@@ -44,7 +49,12 @@ export class CookieSessionStorage {
   }
 
   async get(sessionId: string) {
-    const decryptedData = await unseal(globalThis.crypto, sessionId, Deno.env.get('APP_KEY') as string, ironDefaults)
+    const decryptedData = await unseal(
+      globalThis.crypto,
+      sessionId,
+      Deno.env.get("APP_KEY") as string,
+      ironDefaults,
+    );
 
     const { _flash = {}, ...data } = decryptedData;
     return new Session(data as object, _flash);
@@ -55,7 +65,12 @@ export class CookieSessionStorage {
       this.keyRotate();
     }
 
-    const encryptedData = await seal(globalThis.crypto, { ...session.data, _flash: session.flashedData }, Deno.env.get('APP_KEY') as string, ironDefaults)
+    const encryptedData = await seal(
+      globalThis.crypto,
+      { ...session.data, _flash: session.flashedData },
+      Deno.env.get("APP_KEY") as string,
+      ironDefaults,
+    );
 
     setCookie(response.headers, {
       name: "sessionId",

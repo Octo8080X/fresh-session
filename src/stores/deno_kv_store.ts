@@ -63,7 +63,9 @@ function getSessionCookieSetterFunction<T extends string, F extends string>(
     }
 
     if (!operations.doDestroy) {
-      await client.set([...baseKeyPath, newSessionKey], payload, {expireIn: 0});
+      await client.set([...baseKeyPath, newSessionKey], payload, {
+        expireIn: 0,
+      });
     }
 
     return setSessionText(res, newSessionKey, newCookieOptions);

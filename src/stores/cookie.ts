@@ -1,32 +1,14 @@
 import {
-  create,
-  decode,
   getCookies,
+  ironDefaults,
   MiddlewareHandlerContext,
+  seal,
   setCookie,
-  verify,
+  unseal,
 } from "../deps.ts";
 import { type CookieOptions } from "./cookie_option.ts";
 import { Session } from "../session.ts";
 import type { WithSession } from "./interface.ts";
-
-export function key() {
-  const key = Deno.env.get("APP_KEY");
-
-  if (!key) {
-    console.warn(
-      "[FRESH SESSION] Warning: We didn't detect a env variable `APP_KEY`, if you are in production please fix this ASAP to avoid any security issue.",
-    );
-  }
-
-  return crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(key || "not-secret"),
-    { name: "HMAC", hash: "SHA-512" },
-    false,
-    ["sign", "verify"],
-  );
-}
 
 export function createCookieSessionStorage(cookieOptions?: CookieOptions) {
   let cookieOptionsParam = cookieOptions;
@@ -38,16 +20,14 @@ export function createCookieSessionStorage(cookieOptions?: CookieOptions) {
 }
 
 export class CookieSessionStorage {
-  #key: CryptoKey;
   #cookieOptions: CookieOptions;
 
-  constructor(key: CryptoKey, cookieOptions: CookieOptions) {
-    this.#key = key;
+  constructor(cookieOptions: CookieOptions) {
     this.#cookieOptions = cookieOptions;
   }
 
-  static async init(cookieOptions: CookieOptions) {
-    return new this(await key(), cookieOptions);
+  static init(cookieOptions: CookieOptions) {
+    return new this(cookieOptions);
   }
 
   create() {
@@ -55,17 +35,28 @@ export class CookieSessionStorage {
   }
 
   exists(sessionId: string) {
-    return verify(sessionId, this.#key)
+    return unseal(
+      globalThis.crypto,
+      sessionId,
+      Deno.env.get("APP_KEY") as string,
+      ironDefaults,
+    )
       .then(() => true)
       .catch((e) => {
-        console.warn("Invalid JWT token, creating new session...");
+        console.warn("Invalid session, creating new session...");
         return false;
       });
   }
 
-  get(sessionId: string) {
-    const [, payload] = decode(sessionId);
-    const { _flash = {}, ...data } = payload;
+  async get(sessionId: string) {
+    const decryptedData = await unseal(
+      globalThis.crypto,
+      sessionId,
+      Deno.env.get("APP_KEY") as string,
+      ironDefaults,
+    );
+
+    const { _flash = {}, ...data } = decryptedData;
     return new Session(data as object, _flash);
   }
 
@@ -74,13 +65,16 @@ export class CookieSessionStorage {
       this.keyRotate();
     }
 
+    const encryptedData = await seal(
+      globalThis.crypto,
+      { ...session.data, _flash: session.flashedData },
+      Deno.env.get("APP_KEY") as string,
+      ironDefaults,
+    );
+
     setCookie(response.headers, {
       name: "sessionId",
-      value: await create(
-        { alg: "HS512", typ: "JWT" },
-        { ...session.data, _flash: session.flashedData },
-        this.#key,
-      ),
+      value: encryptedData,
       path: "/",
       ...this.#cookieOptions,
     });

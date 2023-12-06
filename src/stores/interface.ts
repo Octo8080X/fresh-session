@@ -4,4 +4,7 @@ export type WithSession = {
   session: Session;
 };
 
-export type sessionModule =(req: Request, ctx: MiddlewareHandlerContext) => Promise<Response>
+export type sessionModule = (
+  req: Request,
+  ctx: MiddlewareHandlerContext,
+) => Promise<Response>;

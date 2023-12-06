@@ -1,7 +1,7 @@
 import { delay } from "$std/async/delay.ts";
 import { startFreshServer } from "$fresh/tests/test_utils.ts";
 
-Deno.env.set("APP_KEY", "something_for_testing");
+Deno.env.set("APP_KEY", "password-at-least-32-characters-long");
 
 export const BASE_URL = "http://localhost:8000";
 

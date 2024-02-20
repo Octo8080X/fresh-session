@@ -5,7 +5,7 @@ name: Test
 
 on:
   push:
-    branches: ["main", "test"]
+    branches: ["main", "test", "feature/*"]
   pull_request:
     branches: ["main", "test"]
   schedule:

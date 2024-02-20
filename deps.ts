@@ -12,5 +12,7 @@ export {
 export type {
   MiddlewareHandler,
   MiddlewareHandlerContext,
-} from "https://deno.land/x/fresh@1.6.0/server.ts";
+  Plugin,
+  PluginMiddleware,
+} from "https://deno.land/x/fresh@1.6.5/server.ts";
 export { assertEquals } from "https://deno.land/std@0.208.0/testing/asserts.ts";

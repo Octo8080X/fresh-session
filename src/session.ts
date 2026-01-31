@@ -23,6 +23,12 @@ export class SessionManager {
   #doSessionRotate: boolean = false;
   #cryptoKey: CryptoKey | undefined = undefined;
   #isNew: boolean = false;
+  // Flash data from previous request (available for reading)
+  #flashData: Record<string, SessionData> = {};
+  // Flash data to be stored for next request
+  #nextFlashData: Record<string, SessionData> = {};
+  // Key used to store flash data in session
+  static readonly #FLASH_KEY = "__flash__";
 
   constructor(
     private store: ISessionStore,
@@ -95,6 +101,35 @@ export class SessionManager {
   }
 
   /**
+   * Get flash data (available only once, from previous request)
+   */
+  getFlash(
+    key: string,
+  ): undefined | number | string | boolean | Date | Record<string, unknown> {
+    return this.#flashData[key] as
+      | undefined
+      | number
+      | string
+      | boolean
+      | Date
+      | Record<string, unknown>;
+  }
+
+  /**
+   * Set flash data (will be available only on next request)
+   */
+  setFlash(key: string, value: SessionData): void {
+    this.#nextFlashData[key] = value;
+  }
+
+  /**
+   * Check if flash data exists for key
+   */
+  hasFlash(key: string): boolean {
+    return key in this.#flashData;
+  }
+
+  /**
    * Request session destruction
    */
   requestDestroySession(): void {
@@ -125,6 +160,23 @@ export class SessionManager {
     this.#sessionId = sessionId;
     this.#sessionData = data;
     this.#isNew = isNew;
+
+    // Extract flash data from session (available for this request only)
+    if (
+      this.#sessionData &&
+      typeof this.#sessionData === "object" &&
+      !(this.#sessionData instanceof Date)
+    ) {
+      const sessionObj = this.#sessionData as Record<string, unknown>;
+      if (sessionObj[SessionManager.#FLASH_KEY]) {
+        this.#flashData = sessionObj[SessionManager.#FLASH_KEY] as Record<
+          string,
+          SessionData
+        >;
+        // Remove flash data from session (it will be consumed)
+        delete sessionObj[SessionManager.#FLASH_KEY];
+      }
+    }
   }
 
   /**
@@ -149,6 +201,19 @@ export class SessionManager {
       this.#sessionId = sessionId;
     }
 
+    // Store flash data for next request if any
+    if (Object.keys(this.#nextFlashData).length > 0) {
+      if (
+        !this.#sessionData || typeof this.#sessionData !== "object" ||
+        this.#sessionData instanceof Date
+      ) {
+        this.#sessionData = {};
+      }
+      (this.#sessionData as Record<string, unknown>)[
+        SessionManager.#FLASH_KEY
+      ] = this.#nextFlashData;
+    }
+
     // Save session
     const cookieValue = await this.store.save(
       this.#sessionId,
@@ -168,6 +233,19 @@ export class SessionManager {
       key: string,
     ) => undefined | number | string | boolean | Date | Record<string, unknown>;
     set: (key: string, value: SessionData) => void;
+    flash: {
+      get: (
+        key: string,
+      ) =>
+        | undefined
+        | number
+        | string
+        | boolean
+        | Date
+        | Record<string, unknown>;
+      set: (key: string, value: SessionData) => void;
+      has: (key: string) => boolean;
+    };
     destroy: () => void;
     rotate: () => void;
     isNew: () => boolean;
@@ -175,6 +253,11 @@ export class SessionManager {
     return {
       get: (key: string) => this.getValue(key),
       set: (key: string, value: SessionData) => this.setValue(key, value),
+      flash: {
+        get: (key: string) => this.getFlash(key),
+        set: (key: string, value: SessionData) => this.setFlash(key, value),
+        has: (key: string) => this.hasFlash(key),
+      },
       destroy: () => this.requestDestroySession(),
       rotate: () => this.requestRotateSessionId(),
       isNew: () => this.isNew(),
@@ -188,6 +271,19 @@ export interface SessionState {
       key: string,
     ) => undefined | number | string | boolean | Date | Record<string, unknown>;
     set: (key: string, value: SessionData) => void;
+    flash: {
+      get: (
+        key: string,
+      ) =>
+        | undefined
+        | number
+        | string
+        | boolean
+        | Date
+        | Record<string, unknown>;
+      set: (key: string, value: SessionData) => void;
+      has: (key: string) => boolean;
+    };
     destroy: () => void;
     rotate: () => void;
     isNew: () => boolean;

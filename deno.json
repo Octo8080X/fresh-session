@@ -17,7 +17,7 @@
   "unstable": [
     "kv"
   ],
-    "compilerOptions": {
+  "compilerOptions": {
     "lib": [
       "dom",
       "dom.asynciterable",

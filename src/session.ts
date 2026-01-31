@@ -43,6 +43,7 @@ export class SessionManager {
     if (!this.#cryptoKey) {
       this.#cryptoKey = await importKey(this.secret);
     }
+
     return this.#cryptoKey;
   }
 
@@ -246,6 +247,7 @@ export class SessionManager {
       set: (key: string, value: SessionData) => void;
       has: (key: string) => boolean;
     };
+    sessionId:() => string | undefined;
     destroy: () => void;
     rotate: () => void;
     isNew: () => boolean;
@@ -258,6 +260,7 @@ export class SessionManager {
         set: (key: string, value: SessionData) => this.setFlash(key, value),
         has: (key: string) => this.hasFlash(key),
       },
+      sessionId: () => this.#sessionId,
       destroy: () => this.requestDestroySession(),
       rotate: () => this.requestRotateSessionId(),
       isNew: () => this.isNew(),
@@ -284,6 +287,7 @@ export interface SessionState {
       set: (key: string, value: SessionData) => void;
       has: (key: string) => boolean;
     };
+    sessionId:() => string | undefined;
     destroy: () => void;
     rotate: () => void;
     isNew: () => boolean;

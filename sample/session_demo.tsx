@@ -23,6 +23,7 @@ export function registerSessionDemoRoutes(app: App<State>) {
 
     const lastVisit = ctx.state.session.get("lastVisit") as string ?? "None";
     const isNew = ctx.state.session.isNew();
+    const sessionId = ctx.state.session.sessionId() ?? "Unknown";
 
     // Get flash message if any
     const flashMessage = ctx.state.session.flash.get("message") as
@@ -73,8 +74,26 @@ export function registerSessionDemoRoutes(app: App<State>) {
 
         <section style={{ marginBottom: "2rem" }}>
           <h2>Session Info</h2>
-          <table style={{ borderCollapse: "collapse" }}>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <tbody>
+              <tr>
+                <td
+                  style={{ padding: "0.5rem", borderBottom: "1px solid #ccc" }}
+                >
+                  Session ID:
+                </td>
+                <td
+                  style={{
+                    padding: "0.5rem",
+                    borderBottom: "1px solid #ccc",
+                    fontFamily: "monospace",
+                    fontSize: "0.85rem",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {sessionId}
+                </td>
+              </tr>
               <tr>
                 <td
                   style={{ padding: "0.5rem", borderBottom: "1px solid #ccc" }}
@@ -163,7 +182,7 @@ export function registerSessionDemoRoutes(app: App<State>) {
           <form
             method="POST"
             action="/flash-demo"
-            style={{ display: "inline-block" }}
+            style={{ display: "inline-block", marginRight: "1rem" }}
           >
             <button
               type="submit"
@@ -177,6 +196,26 @@ export function registerSessionDemoRoutes(app: App<State>) {
               }}
             >
               Test Flash Message
+            </button>
+          </form>
+
+          <form
+            method="POST"
+            action="/rotate-session"
+            style={{ display: "inline-block" }}
+          >
+            <button
+              type="submit"
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "#6f42c1",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Rotate Session ID
             </button>
           </form>
         </section>
@@ -196,6 +235,9 @@ export function registerSessionDemoRoutes(app: App<State>) {
             <li>Click "Test Flash Message" to see flash messages in action</li>
             <li>
               Flash messages appear only once and disappear on next page load
+            </li>
+            <li>
+              Click "Rotate Session ID" to regenerate session ID (keeps data)
             </li>
             <li>Session is lost when server restarts</li>
           </ul>
@@ -228,6 +270,25 @@ export function registerSessionDemoRoutes(app: App<State>) {
       "This is a flash message! It will disappear after you reload.",
     );
     ctx.state.session.flash.set("type", "info");
+
+    // Redirect back to home
+    return new Response(null, {
+      status: 303,
+      headers: { Location: "/" },
+    });
+  });
+
+  // POST /rotate-session - Rotate session ID
+  app.post("/rotate-session", (ctx) => {
+    // Rotate session ID (keeps session data, but changes the ID)
+    ctx.state.session.rotate();
+
+    // Set flash message
+    ctx.state.session.flash.set(
+      "message",
+      "Session ID has been rotated! Your data is preserved with a new session ID.",
+    );
+    ctx.state.session.flash.set("type", "success");
 
     // Redirect back to home
     return new Response(null, {

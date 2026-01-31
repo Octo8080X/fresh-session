@@ -477,7 +477,9 @@ Deno.test("sessionExpires: default expiration is passed to store", async () => {
     assertEquals(
       expiresTime >= expectedMinExpires && expiresTime <= expectedMaxExpires,
       true,
-      `Expected expiresAt around ${new Date(Date.now() + oneDayMs).toISOString()}, got ${store.capturedExpiresAt.toISOString()}`,
+      `Expected expiresAt around ${
+        new Date(Date.now() + oneDayMs).toISOString()
+      }, got ${store.capturedExpiresAt.toISOString()}`,
     );
   } else {
     throw new Error("expiresAt was not passed to store");
@@ -506,7 +508,9 @@ Deno.test("sessionExpires: custom expiration time is respected", async () => {
     assertEquals(
       expiresTime >= expectedMinExpires && expiresTime <= expectedMaxExpires,
       true,
-      `Expected expiresAt around ${new Date(Date.now() + customExpires).toISOString()}, got ${store.capturedExpiresAt.toISOString()}`,
+      `Expected expiresAt around ${
+        new Date(Date.now() + customExpires).toISOString()
+      }, got ${store.capturedExpiresAt.toISOString()}`,
     );
   } else {
     throw new Error("expiresAt was not passed to store");
@@ -535,7 +539,9 @@ Deno.test("sessionExpires: short expiration for quick expiry", async () => {
     assertEquals(
       expiresTime >= expectedMinExpires && expiresTime <= expectedMaxExpires,
       true,
-      `Expected expiresAt around ${new Date(Date.now() + shortExpires).toISOString()}, got ${store.capturedExpiresAt.toISOString()}`,
+      `Expected expiresAt around ${
+        new Date(Date.now() + shortExpires).toISOString()
+      }, got ${store.capturedExpiresAt.toISOString()}`,
     );
   } else {
     throw new Error("expiresAt was not passed to store");

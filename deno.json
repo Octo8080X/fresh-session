@@ -4,7 +4,12 @@
   "exports": "./mod.ts",
   "tasks": {
     "dev": "deno test -E --watch",
-    "sample": "deno run -EN --watch sample/main.ts"
+    "sample": "deno run -EN --watch sample/main.ts",
+    "test": "deno test --allow-all",
+    "test:doc": "deno test --doc --allow-all src/ mod.ts"
+  },
+  "test": {
+    "include": ["mod_test.ts", "src/**/*_test.ts"]
   },
   "license": "MIT",
   "imports": {

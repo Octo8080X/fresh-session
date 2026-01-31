@@ -25,7 +25,6 @@ function extractSessionCookie(
   return match ? match[1] : null;
 }
 
-
 // Test secret key (32+ characters required)
 const TEST_SECRET = "this-is-a-test-secret-key-32chars!";
 Deno.test("use memory store", async () => {

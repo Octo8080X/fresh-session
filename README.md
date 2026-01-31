@@ -31,11 +31,7 @@ import {
 ```ts
 // routes/_middleware.ts
 import { App } from "@fresh/core";
-import {
-  MemorySessionStore,
-  session,
-  type SessionState,
-} from "./mod.ts";
+import { MemorySessionStore, session, type SessionState } from "./mod.ts";
 
 // Define your app state
 interface State extends SessionState {
@@ -136,10 +132,7 @@ const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
 For distributed environments with Redis.
 
 ```ts ignore
-import {
-  type RedisClient,
-  RedisSessionStore,
-} from "./mod.ts";
+import { type RedisClient, RedisSessionStore } from "./mod.ts";
 import { connect } from "npm:ioredis";
 
 const redis = new Redis({

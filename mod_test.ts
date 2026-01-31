@@ -3,11 +3,11 @@ import {
   CookieSessionStore,
   KvSessionStore,
   MemorySessionStore,
-  SqlSessionStore,
-  RedisSessionStore,
   type RedisClient,
+  RedisSessionStore,
   session,
   type SessionState,
+  SqlSessionStore,
 } from "./mod.ts";
 import { MockSqlClient } from "./src/storage/sql_test.ts";
 import { App } from "@fresh/core";
@@ -160,7 +160,9 @@ Deno.test("use redis store (ioredis-mock)", async () => {
   const redisClient: RedisClient = {
     get: (key: string) => redisMock.get(key),
     set: (key: string, value: string, options?: { ex?: number }) =>
-      options?.ex ? redisMock.set(key, value, "EX", options.ex) : redisMock.set(key, value),
+      options?.ex
+        ? redisMock.set(key, value, "EX", options.ex)
+        : redisMock.set(key, value),
     del: (key: string) => redisMock.del(key),
   };
 

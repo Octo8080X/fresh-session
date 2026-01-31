@@ -1,5 +1,5 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { SqlSessionStore, type SqlClient } from "./sql.ts";
+import { type SqlClient, SqlSessionStore } from "./sql.ts";
 
 /**
  * テスト用のモックSQLクライアント
@@ -26,7 +26,9 @@ export class MockSqlClient implements SqlClient {
       return {
         rows: [{
           data: entry.data,
-          expires_at: entry.expires_at ? entry.expires_at.replace(" ", "T") + "Z" : null,
+          expires_at: entry.expires_at
+            ? entry.expires_at.replace(" ", "T") + "Z"
+            : null,
         }],
       };
     }

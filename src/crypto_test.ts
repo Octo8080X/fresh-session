@@ -1,5 +1,5 @@
-import { assertEquals, assertRejects, assertNotEquals } from "@std/assert";
-import { encrypt, decrypt, generateKey, importKey } from "./crypto.ts";
+import { assertEquals, assertNotEquals, assertRejects } from "@std/assert";
+import { decrypt, encrypt, generateKey, importKey } from "./crypto.ts";
 
 Deno.test("encrypt and decrypt: basic string", async () => {
   const key = await generateKey();
@@ -33,7 +33,11 @@ Deno.test("encrypt and decrypt: Japanese characters", async () => {
 
 Deno.test("encrypt and decrypt: JSON data", async () => {
   const key = await generateKey();
-  const data = { userId: "user123", role: "admin", settings: { theme: "dark" } };
+  const data = {
+    userId: "user123",
+    role: "admin",
+    settings: { theme: "dark" },
+  };
   const original = JSON.stringify(data);
 
   const encrypted = await encrypt(original, key);

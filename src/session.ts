@@ -1,5 +1,9 @@
 // セッション管理の主要ロジック
-import { mergeSessionConfig, type PartialSessionConfig, type SessionConfig } from "./config.ts";
+import {
+  mergeSessionConfig,
+  type PartialSessionConfig,
+  type SessionConfig,
+} from "./config.ts";
 import type { ISessionStore, SessionData } from "./types.ts";
 import type { Middleware } from "@fresh/core";
 import {
@@ -18,7 +22,7 @@ export class SessionManager {
   #doSessionDestroy: boolean = false;
   #doSessionRotate: boolean = false;
   #cryptoKey: CryptoKey | undefined = undefined;
-  #isNew : boolean = false;
+  #isNew: boolean = false;
 
   constructor(
     private store: ISessionStore,

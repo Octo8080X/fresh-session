@@ -120,7 +120,8 @@ export class SqlSessionStore implements ISessionStore {
     expiresAt?: Date,
   ): Promise<string> {
     const dataJson = JSON.stringify(data);
-    const expiresAtStr = expiresAt?.toISOString().slice(0, 19).replace("T", " ") ?? null;
+    const expiresAtStr =
+      expiresAt?.toISOString().slice(0, 19).replace("T", " ") ?? null;
 
     // UPSERT (INSERT ... ON DUPLICATE KEY UPDATE)
     await this.#client.execute(

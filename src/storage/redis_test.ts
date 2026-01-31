@@ -1,5 +1,5 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { RedisSessionStore, type RedisClient } from "./redis.ts";
+import { type RedisClient, RedisSessionStore } from "./redis.ts";
 // @deno-types="npm:@types/ioredis-mock"
 import RedisMock from "ioredis-mock";
 
@@ -10,12 +10,18 @@ const sharedRedisMock = new (RedisMock as any)();
 /**
  * ioredis-mockをRedisClientインターフェースにアダプト
  */
-function createMockRedisClient(): RedisClient & { flushall: () => Promise<void> } {
+function createMockRedisClient(): RedisClient & {
+  flushall: () => Promise<void>;
+} {
   return {
     async get(key: string): Promise<string | null> {
       return await sharedRedisMock.get(key);
     },
-    async set(key: string, value: string, options?: { ex?: number }): Promise<void> {
+    async set(
+      key: string,
+      value: string,
+      options?: { ex?: number },
+    ): Promise<void> {
       if (options?.ex) {
         await sharedRedisMock.set(key, value, "EX", options.ex);
       } else {

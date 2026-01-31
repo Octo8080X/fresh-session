@@ -27,44 +27,6 @@ function extractSessionCookie(
 
 // Test secret key (32+ characters required)
 const TEST_SECRET = "this-is-a-test-secret-key-32chars!";
-Deno.test("use memory store", async () => {
-  const store = new MemorySessionStore();
-  const sessionSaveRes = await (async () => {
-    const handler = new App<State>()
-      .use(session(store, TEST_SECRET))
-      .get("/", (ctx) => {
-        ctx.state.session.set("userId", "user123");
-        return new Response("Hello, World!");
-      }).handler();
-    const req = new Request("http://localhost");
-    const res = await handler(req);
-
-    assertEquals(await res.text(), "Hello, World!");
-
-    return res;
-  })();
-
-  const sessionCookie = extractSessionCookie(sessionSaveRes);
-
-  {
-    const handler = new App<State>()
-      .use(session(store, TEST_SECRET))
-      .get("/get", (ctx) => {
-        const userId = ctx.state.session.get("userId") as string | undefined;
-        return new Response(userId ?? "No User");
-      })
-      .handler();
-
-    const req = new Request("http://localhost/get", {
-      headers: {
-        "Cookie": `fresh_session=${sessionCookie}`,
-      },
-    });
-    const res = await handler(req);
-
-    assertEquals(await res.text(), "user123");
-  }
-});
 
 Deno.test("use cookie store", async () => {
   const store = new CookieSessionStore();

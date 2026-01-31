@@ -5,8 +5,8 @@
   "tasks": {
     "dev": "deno test -E --watch",
     "sample": "deno run -EN --watch sample/main.ts",
-    "test": "deno test --allow-all",
-    "test:doc": "deno test --doc --allow-all src/ mod.ts"
+    "test": "deno test -E",
+    "test:doc": "deno test --doc -E"
   },
   "test": {
     "include": ["mod_test.ts", "src/**/*_test.ts"]
@@ -27,6 +27,7 @@
       "dom",
       "dom.asynciterable",
       "dom.iterable",
+      "deno.unstable",
       "deno.ns"
     ],
     "jsx": "precompile",

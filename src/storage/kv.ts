@@ -1,25 +1,25 @@
 /// <reference lib="deno.unstable" />
-// Deno KV ストレージ実装
+// Deno KV storage implementation
 import type { ISessionStore, LoadResult, SessionData } from "../types.ts";
 
 /**
- * Deno KVベースのセッションストアOptions
+ * Deno KV session store options
  */
 export interface KvSessionStoreOptions {
   /**
-   * KVインスタンス（省略時はDeno.openKv()で取得）
+   * KV instance (if omitted, obtained via Deno.openKv())
    */
   kv?: Deno.Kv;
   /**
-   * KVキーのプレフィックス
+   * KV key prefix
    * @default ["sessions"]
    */
   keyPrefix?: Deno.KvKey;
 }
 
 /**
- * Deno KVベースのセッションストア
- * 永続的なセッション管理が可能
+ * Deno KV-based session store
+ * Enables persistent session management
  */
 export class KvSessionStore implements ISessionStore {
   #kv: Deno.Kv | undefined;
@@ -36,7 +36,7 @@ export class KvSessionStore implements ISessionStore {
   }
 
   /**
-   * KVインスタンスを取得（遅延初期化）
+   * Get KV instance (lazy initialization)
    */
   private async getKv(): Promise<Deno.Kv> {
     if (this.#kv) {
@@ -50,14 +50,14 @@ export class KvSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションIDからKVキーを生成
+   * Generate KV key from session ID
    */
   private getKey(sessionId: string): Deno.KvKey {
     return [...this.#keyPrefix, sessionId];
   }
 
   /**
-   * Cookieの値（セッションID）からセッションを復元
+   * Restore session from cookie value (session ID)
    */
   async load(cookieValue: string | undefined): Promise<LoadResult> {
     if (!cookieValue) {
@@ -81,9 +81,9 @@ export class KvSessionStore implements ISessionStore {
       };
     }
 
-    // 有効期限チェック
+    // Expiry check
     if (entry.value.expiresAt && new Date(entry.value.expiresAt) < new Date()) {
-      // 期限切れの場合は削除
+      // Delete if expired
       await kv.delete(this.getKey(cookieValue));
       return {
         sessionId: crypto.randomUUID(),
@@ -100,7 +100,7 @@ export class KvSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを保存し、Cookieに設定する値（セッションID）を返す
+   * Save session and return value to set in cookie (session ID)
    */
   async save(
     sessionId: string,
@@ -113,7 +113,7 @@ export class KvSessionStore implements ISessionStore {
       expiresAt: expiresAt?.toISOString(),
     };
 
-    // expireInオプションを使用してKVレベルでも自動期限切れを設定
+    // Use expireIn option to set auto-expiry at KV level
     const options: { expireIn?: number } = {};
     if (expiresAt) {
       const expireIn = expiresAt.getTime() - Date.now();
@@ -127,7 +127,7 @@ export class KvSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを破棄
+   * Destroy session
    */
   async destroy(sessionId: string): Promise<void> {
     const kv = await this.getKv();
@@ -135,7 +135,7 @@ export class KvSessionStore implements ISessionStore {
   }
 
   /**
-   * KV接続を閉じる
+   * Close KV connection
    */
   async close(): Promise<void> {
     if (this.#kv) {

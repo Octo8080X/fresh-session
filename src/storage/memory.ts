@@ -1,14 +1,14 @@
-// メモリストレージ実装
+// Memory storage implementation
 import type { ISessionStore, LoadResult, SessionData } from "../types.ts";
 
 /**
- * シンプルなメモリ内セッションストア
+ * Simple in-memory session store
  */
 export class MemorySessionStore implements ISessionStore {
   private store = new Map<string, { data: SessionData; expiresAt?: Date }>();
 
   /**
-   * Cookieの値（セッションID）からセッションを復元
+   * Restore session from cookie value (session ID)
    */
   load(cookieValue: string | undefined): Promise<LoadResult> {
     if (!cookieValue) {
@@ -18,7 +18,7 @@ export class MemorySessionStore implements ISessionStore {
         isNew: true,
       });
     }
-    // cookieValueがあり、ストアに存在する場合
+    // If cookieValue exists and is in the store
     if (!this.store.has(cookieValue)) {
       return Promise.resolve({
         sessionId: crypto.randomUUID(),
@@ -29,7 +29,7 @@ export class MemorySessionStore implements ISessionStore {
 
     const entry = this.store.get(cookieValue)!;
     if (entry.expiresAt && entry.expiresAt < new Date()) {
-      // 期限切れの場合は削除
+      // Delete if expired
       this.store.delete(cookieValue);
       return Promise.resolve({
         sessionId: crypto.randomUUID(),
@@ -46,7 +46,7 @@ export class MemorySessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを保存し、Cookieに設定する値（セッションID）を返す
+   * Save session and return value to set in cookie (session ID)
    */
   save(
     sessionId: string,
@@ -58,7 +58,7 @@ export class MemorySessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを破棄
+   * Destroy session
    */
   destroy(sessionId: string): Promise<void> {
     this.store.delete(sessionId);
@@ -66,7 +66,7 @@ export class MemorySessionStore implements ISessionStore {
   }
 
   /**
-   * 有効期限切れセッションのクリーンアップ
+   * Cleanup expired sessions
    */
   cleanup(): void {
     const now = new Date();

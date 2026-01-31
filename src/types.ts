@@ -1,6 +1,6 @@
-// セッション管理プラグイン共通型定義
+// Session management plugin common type definitions
 
-// セッションのデータは、任意のオブジェクト、文字列、数値、真偽値を許容
+// Session data can be any object, string, number, boolean, Date, or null
 export type SessionData =
   | Record<string, unknown>
   | string
@@ -10,7 +10,7 @@ export type SessionData =
   | null;
 
 /**
- * ストレージからの読み込み結果
+ * Result from loading session from storage
  */
 export interface LoadResult {
   sessionId: string;
@@ -20,25 +20,25 @@ export interface LoadResult {
 
 export interface ISessionStore {
   /**
-   * Cookieの値からセッションを復元
-   * @param cookieValue Cookieから取得した値（セッションIDまたは暗号化データ）
-   * @returns セッションID、データ、新規かどうか
+   * Restore session from cookie value
+   * @param cookieValue Value from cookie (session ID or encrypted data)
+   * @returns Session ID, data, and whether it's a new session
    */
   load(cookieValue: string | undefined): Promise<LoadResult>;
 
   /**
-   * セッションを保存し、Cookieに設定する値を返す
-   * @returns Cookieに設定する値（メモリ: sessionId, Cookie: 暗号化データ）
+   * Save session and return value to set in cookie
+   * @returns Value to set in cookie (memory: sessionId, cookie: encrypted data)
    */
   save(sessionId: string, data: SessionData): Promise<string>;
 
   /**
-   * セッションを破棄
+   * Destroy session
    */
   destroy(sessionId: string): Promise<void>;
 
   /**
-   * 有効期限切れセッションのクリーンアップ（オプション）
+   * Cleanup expired sessions (optional)
    */
   cleanup?(): void;
 }

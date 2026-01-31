@@ -14,19 +14,19 @@ Deno.test("CookieSessionStore: load with undefined cookie creates new session", 
 Deno.test("CookieSessionStore: save and load session data", async () => {
   const store = new CookieSessionStore();
 
-  // 新規セッション作成
+  // Create new session
   const { sessionId } = await store.load(undefined);
   const data = { userId: "user123", role: "admin" };
 
-  // データ保存（JSON文字列を取得）
+  // Save data (get JSON string)
   const cookieValue = await store.save(sessionId, data);
 
-  // Cookie値はJSON文字列
+  // Cookie value is JSON string
   const parsed = JSON.parse(cookieValue);
   assertEquals(parsed.sessionId, sessionId);
   assertEquals(parsed.data, data);
 
-  // データ読み込み
+  // Load data
   const result = await store.load(cookieValue);
   assertEquals(result.sessionId, sessionId);
   assertEquals(result.data, data);
@@ -36,7 +36,7 @@ Deno.test("CookieSessionStore: save and load session data", async () => {
 Deno.test("CookieSessionStore: invalid cookie value creates new session", async () => {
   const store = new CookieSessionStore();
 
-  // 無効なCookie値（JSONパース失敗）
+  // Invalid cookie value (JSON parse failure)
   const result = await store.load("invalid-cookie-value");
 
   assertExists(result.sessionId);
@@ -49,12 +49,12 @@ Deno.test("CookieSessionStore: expired session returns new session", async () =>
 
   const { sessionId } = await store.load(undefined);
   const data = { temp: "data" };
-  const pastDate = new Date(Date.now() - 10000); // 10秒前
+  const pastDate = new Date(Date.now() - 10000); // 10 seconds ago
 
   const cookieValue = await store.save(sessionId, data, pastDate);
   const result = await store.load(cookieValue);
 
-  // 期限切れなので新規セッション扱い
+  // Treated as new session because expired
   assertEquals(result.isNew, true);
   assertEquals(result.data, {});
 });
@@ -64,7 +64,7 @@ Deno.test("CookieSessionStore: non-expired session returns data", async () => {
 
   const { sessionId } = await store.load(undefined);
   const data = { active: true };
-  const futureDate = new Date(Date.now() + 60000); // 1分後
+  const futureDate = new Date(Date.now() + 60000); // 1 minute later
 
   const cookieValue = await store.save(sessionId, data, futureDate);
   const result = await store.load(cookieValue);
@@ -92,7 +92,7 @@ Deno.test("CookieSessionStore: destroy does nothing (cookie deletion handled by 
 
   const { sessionId } = await store.load(undefined);
 
-  // destroyは何もしない（エラーにならないことを確認）
+  // destroy does nothing (just verify no error occurs)
   await store.destroy(sessionId);
 });
 

@@ -1,4 +1,4 @@
-// Cookie操作関連
+// Cookie operations
 import {
   type Cookie,
   deleteCookie,
@@ -7,7 +7,7 @@ import {
 } from "@std/http/cookie";
 
 /**
- * Cookie操作ユーティリティ
+ * Cookie utility functions
  */
 export function setSessionCookie(
   headers: Headers,

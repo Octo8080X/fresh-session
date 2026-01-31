@@ -1,9 +1,9 @@
-// セキュリティ機能（暗号化・署名）
+// Security features (encryption)
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 /**
- * AES-GCM暗号化
+ * AES-GCM encryption
  */
 export async function encrypt(data: string, key: CryptoKey): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -12,7 +12,7 @@ export async function encrypt(data: string, key: CryptoKey): Promise<string> {
     key,
     encoder.encode(data),
   );
-  // iv + encrypted を base64 で返す
+  // Return iv + encrypted as base64
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.length);
@@ -20,7 +20,7 @@ export async function encrypt(data: string, key: CryptoKey): Promise<string> {
 }
 
 /**
- * AES-GCM復号
+ * AES-GCM decryption
  */
 export async function decrypt(
   encoded: string,
@@ -38,7 +38,7 @@ export async function decrypt(
 }
 
 /**
- * 暗号化キー生成（AES-GCM用、256bit）
+ * Generate encryption key (AES-GCM, 256bit)
  */
 export async function generateKey(): Promise<CryptoKey> {
   return await crypto.subtle.generateKey(
@@ -49,9 +49,9 @@ export async function generateKey(): Promise<CryptoKey> {
 }
 
 /**
- * シークレット文字列からキーをインポート
- * @param secret 32文字以上の文字列（必須）
- * @throws Error シークレットが32文字未満の場合
+ * Import key from secret string
+ * @param secret String with at least 32 characters (required)
+ * @throws Error if secret is less than 32 characters
  */
 export async function importKey(secret: string): Promise<CryptoKey> {
   if (secret.length < 32) {

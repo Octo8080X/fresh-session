@@ -16,10 +16,10 @@ import RedisMock from "ioredis-mock";
 
 type State = Record<PropertyKey, never> & SessionState;
 
-// テスト用のシークレットキー（32文字以上必須）
+// Test secret key (32+ characters required)
 const TEST_SECRET = "this-is-a-test-secret-key-32chars!";
 
-// Set-CookieヘッダーからセッションCookie値を抽出
+// Extract session cookie value from Set-Cookie header
 function extractSessionCookie(
   response: Response,
   cookieName = "fresh_session",

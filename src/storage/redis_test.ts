@@ -3,12 +3,12 @@ import { type RedisClient, RedisSessionStore } from "./redis.ts";
 // @deno-types="npm:@types/ioredis-mock"
 import RedisMock from "ioredis-mock";
 
-// 共有のRedisMockインスタンス（EventEmitterリークを防ぐ）
+// Shared RedisMock instance (prevents EventEmitter leaks)
 // deno-lint-ignore no-explicit-any
 const sharedRedisMock = new (RedisMock as any)();
 
 /**
- * ioredis-mockをRedisClientインターフェースにアダプト
+ * Adapt ioredis-mock to RedisClient interface
  */
 function createMockRedisClient(): RedisClient & {
   flushall: () => Promise<void>;
@@ -72,15 +72,15 @@ Deno.test("RedisSessionStore: save and load session data", async () => {
   const store = new RedisSessionStore({ client });
 
   try {
-    // 新規セッション作成
+    // Create new session
     const { sessionId } = await store.load(undefined);
     const data = { userId: "user123", role: "admin" };
 
-    // データ保存
+    // Save data
     const cookieValue = await store.save(sessionId, data);
-    assertEquals(cookieValue, sessionId); // RedisStoreはsessionIdをそのまま返す
+    assertEquals(cookieValue, sessionId); // RedisStore returns sessionId as-is
 
-    // データ読み込み
+    // Load data
     const result = await store.load(sessionId);
     assertEquals(result.sessionId, sessionId);
     assertEquals(result.data, data);
@@ -95,14 +95,14 @@ Deno.test("RedisSessionStore: destroy removes session", async () => {
   const store = new RedisSessionStore({ client });
 
   try {
-    // セッション作成と保存
+    // Create and save session
     const { sessionId } = await store.load(undefined);
     await store.save(sessionId, { foo: "bar" });
 
-    // 破棄
+    // Destroy
     await store.destroy(sessionId);
 
-    // 破棄後は新規セッション扱い
+    // After destruction, treated as new session
     const result = await store.load(sessionId);
     assertEquals(result.isNew, true);
     assertEquals(result.data, {});
@@ -118,12 +118,12 @@ Deno.test("RedisSessionStore: expired session returns new session", async () => 
   try {
     const sessionId = "expired-session";
     const data = { temp: "data" };
-    const pastDate = new Date(Date.now() - 10000); // 10秒前
+    const pastDate = new Date(Date.now() - 10000); // 10 seconds ago
 
     await store.save(sessionId, data, pastDate);
     const result = await store.load(sessionId);
 
-    // 期限切れなので新規セッション扱い
+    // Treated as new session because expired
     assertEquals(result.isNew, true);
     assertEquals(result.data, {});
   } finally {
@@ -138,7 +138,7 @@ Deno.test("RedisSessionStore: non-expired session returns data", async () => {
   try {
     const sessionId = "valid-session";
     const data = { active: true };
-    const futureDate = new Date(Date.now() + 60000); // 1分後
+    const futureDate = new Date(Date.now() + 60000); // 1 minute later
 
     await store.save(sessionId, data, futureDate);
     const result = await store.load(sessionId);
@@ -197,7 +197,7 @@ Deno.test("RedisSessionStore: custom key prefix", async () => {
 
     await store.save(sessionId, data);
 
-    // カスタムプレフィックスで保存されていることを確認
+    // Verify saved with custom prefix
     const storedValue = await client.get("custom:test-session");
     assertExists(storedValue);
 
@@ -242,7 +242,7 @@ Deno.test("RedisSessionStore: invalid JSON in Redis returns new session", async 
   const store = new RedisSessionStore({ client });
 
   try {
-    // 不正なJSONを直接設定
+    // Set invalid JSON directly
     await client.set("session:invalid-json", "not valid json");
 
     const result = await store.load("invalid-json");

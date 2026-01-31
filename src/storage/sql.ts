@@ -1,9 +1,9 @@
-// SQL ストレージ実装
+// SQL storage implementation
 import type { ISessionStore, LoadResult, SessionData } from "../types.ts";
 
 /**
- * SQL接続インターフェース
- * 様々なSQLクライアントと互換性を持たせるための抽象化
+ * SQL connection interface
+ * Abstraction for compatibility with various SQL clients
  */
 export interface SqlClient {
   execute(
@@ -13,25 +13,25 @@ export interface SqlClient {
 }
 
 /**
- * SQLセッションストアOptions
+ * SQL session store options
  */
 export interface SqlSessionStoreOptions {
   /**
-   * SQLクライアントインスタンス
+   * SQL client instance
    */
   client: SqlClient;
   /**
-   * テーブル名
+   * Table name
    * @default "sessions"
    */
   tableName?: string;
 }
 
 /**
- * SQLベースのセッションストア
- * RDBMSでの永続的なセッション管理が可能
+ * SQL-based session store
+ * Enables persistent session management with RDBMS
  *
- * 必要なテーブル構造:
+ * Required table structure:
  * ```sql
  * CREATE TABLE sessions (
  *   session_id VARCHAR(36) PRIMARY KEY,
@@ -53,7 +53,7 @@ export class SqlSessionStore implements ISessionStore {
   }
 
   /**
-   * Cookieの値（セッションID）からセッションを復元
+   * Restore session from cookie value (session ID)
    */
   async load(cookieValue: string | undefined): Promise<LoadResult> {
     if (!cookieValue) {
@@ -80,11 +80,11 @@ export class SqlSessionStore implements ISessionStore {
 
       const row = result.rows[0];
 
-      // 有効期限チェック
+      // Expiry check
       if (row.expires_at) {
         const expiresAt = new Date(row.expires_at as string);
         if (expiresAt < new Date()) {
-          // 期限切れの場合は削除
+          // Delete if expired
           await this.destroy(cookieValue);
           return {
             sessionId: crypto.randomUUID(),
@@ -102,7 +102,7 @@ export class SqlSessionStore implements ISessionStore {
         isNew: false,
       };
     } catch {
-      // エラー時は新規セッション
+      // Return new session on error
       return {
         sessionId: crypto.randomUUID(),
         data: {},
@@ -112,7 +112,7 @@ export class SqlSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを保存し、Cookieに設定する値（セッションID）を返す
+   * Save session and return value to set in cookie (session ID)
    */
   async save(
     sessionId: string,
@@ -135,7 +135,7 @@ export class SqlSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを破棄
+   * Destroy session
    */
   async destroy(sessionId: string): Promise<void> {
     await this.#client.execute(
@@ -145,7 +145,7 @@ export class SqlSessionStore implements ISessionStore {
   }
 
   /**
-   * 有効期限切れセッションのクリーンアップ
+   * Cleanup expired sessions
    */
   async cleanup(): Promise<void> {
     await this.#client.execute(

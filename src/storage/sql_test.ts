@@ -2,8 +2,8 @@ import { assertEquals, assertExists } from "@std/assert";
 import { type SqlClient, SqlSessionStore } from "./sql.ts";
 
 /**
- * テスト用のモックSQLクライアント
- * SQL形式の日時フォーマット（YYYY-MM-DD HH:MM:SS）をシミュレート
+ * Mock SQL client for testing
+ * Simulates SQL datetime format (YYYY-MM-DD HH:MM:SS)
  */
 export class MockSqlClient implements SqlClient {
   private store = new Map<
@@ -22,7 +22,7 @@ export class MockSqlClient implements SqlClient {
       if (!entry) {
         return { rows: [] };
       }
-      // MySQLはexpiresをISO形式で返すことを想定
+      // MySQL expects expires in ISO format
       return {
         rows: [{
           data: entry.data,
@@ -54,7 +54,7 @@ export class MockSqlClient implements SqlClient {
       const now = new Date();
       for (const [key, value] of this.store.entries()) {
         if (value.expires_at) {
-          // MySQL形式をパース
+          // Parse MySQL format
           const expiresAt = new Date(value.expires_at.replace(" ", "T") + "Z");
           if (expiresAt < now) {
             this.store.delete(key);
@@ -67,7 +67,7 @@ export class MockSqlClient implements SqlClient {
     return {};
   }
 
-  // テスト用ヘルパー
+  // Test helper
   clear(): void {
     this.store.clear();
   }
@@ -99,15 +99,15 @@ Deno.test("SqlSessionStore: save and load session data", async () => {
   const client = new MockSqlClient();
   const store = new SqlSessionStore({ client });
 
-  // 新規セッション作成
+  // Create new session
   const { sessionId } = await store.load(undefined);
   const data = { userId: "user123", role: "admin" };
 
-  // データ保存
+  // Save data
   const cookieValue = await store.save(sessionId, data);
   assertEquals(cookieValue, sessionId);
 
-  // データ読み込み
+  // Load data
   const result = await store.load(sessionId);
   assertEquals(result.sessionId, sessionId);
   assertEquals(result.data, data);
@@ -118,14 +118,14 @@ Deno.test("SqlSessionStore: destroy removes session", async () => {
   const client = new MockSqlClient();
   const store = new SqlSessionStore({ client });
 
-  // セッション作成と保存
+  // Create and save session
   const { sessionId } = await store.load(undefined);
   await store.save(sessionId, { foo: "bar" });
 
-  // 破棄
+  // Destroy
   await store.destroy(sessionId);
 
-  // 破棄後は新規セッション扱い
+  // After destruction, treated as new session
   const result = await store.load(sessionId);
   assertEquals(result.isNew, true);
   assertEquals(result.data, {});
@@ -137,12 +137,12 @@ Deno.test("SqlSessionStore: expired session returns new session", async () => {
 
   const sessionId = "expired-session";
   const data = { temp: "data" };
-  const pastDate = new Date(Date.now() - 10000); // 10秒前
+  const pastDate = new Date(Date.now() - 10000); // 10 seconds ago
 
   await store.save(sessionId, data, pastDate);
   const result = await store.load(sessionId);
 
-  // 期限切れなので新規セッション扱い
+  // Treated as new session because expired
   assertEquals(result.isNew, true);
   assertEquals(result.data, {});
 });
@@ -153,7 +153,7 @@ Deno.test("SqlSessionStore: non-expired session returns data", async () => {
 
   const sessionId = "valid-session";
   const data = { active: true };
-  const futureDate = new Date(Date.now() + 60000); // 1分後
+  const futureDate = new Date(Date.now() + 60000); // 1 minute later
 
   await store.save(sessionId, data, futureDate);
   const result = await store.load(sessionId);
@@ -233,24 +233,24 @@ Deno.test("SqlSessionStore: cleanup removes expired sessions", async () => {
   const client = new MockSqlClient();
   const store = new SqlSessionStore({ client });
 
-  // 期限切れセッション
+  // Expired sessions
   await store.save("expired-1", { a: 1 }, new Date(Date.now() - 10000));
   await store.save("expired-2", { b: 2 }, new Date(Date.now() - 5000));
 
-  // 有効なセッション
+  // Valid sessions
   await store.save("valid-1", { c: 3 }, new Date(Date.now() + 60000));
-  await store.save("no-expiry", { d: 4 }); // 期限なし
+  await store.save("no-expiry", { d: 4 }); // No expiry
 
   await store.cleanup();
 
-  // 期限切れセッションは削除されている
+  // Expired sessions are deleted
   const expired1 = await store.load("expired-1");
   assertEquals(expired1.isNew, true);
 
   const expired2 = await store.load("expired-2");
   assertEquals(expired2.isNew, true);
 
-  // 有効なセッションは残っている
+  // Valid sessions remain
   const valid1 = await store.load("valid-1");
   assertEquals(valid1.data, { c: 3 });
   assertEquals(valid1.isNew, false);

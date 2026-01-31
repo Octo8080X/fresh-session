@@ -1,17 +1,17 @@
-// Cookieストレージ実装
-// セッションデータをCookie自体に保存（暗号化はsession.tsで行う）
+// Cookie storage implementation
+// Session data is stored in the cookie itself (encryption is done by session.ts)
 import type { ISessionStore, LoadResult, SessionData } from "../types.ts";
 
 /**
- * Cookieベースのセッションストア
- * セッションデータをCookie自体に保存
- * サーバー側にストレージ不要だが、Cookieサイズ制限（4KB）に注意
- * 暗号化・復号化はSessionManagerが行う
+ * Cookie-based session store
+ * Stores session data in the cookie itself
+ * No server-side storage needed, but be aware of cookie size limit (4KB)
+ * Encryption/decryption is handled by SessionManager
  */
 export class CookieSessionStore implements ISessionStore {
   /**
-   * Cookieの値からセッションを復元
-   * cookieValueは復号済みのJSON文字列
+   * Restore session from cookie value
+   * cookieValue is a decrypted JSON string
    */
   load(cookieValue: string | undefined): Promise<LoadResult> {
     if (!cookieValue) {
@@ -29,7 +29,7 @@ export class CookieSessionStore implements ISessionStore {
         expiresAt?: string;
       };
 
-      // 有効期限チェック
+      // Expiry check
       if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
         return Promise.resolve({
           sessionId: crypto.randomUUID(),
@@ -44,7 +44,7 @@ export class CookieSessionStore implements ISessionStore {
         isNew: false,
       });
     } catch {
-      // パース失敗時は新規セッション
+      // Return new session on parse failure
       return Promise.resolve({
         sessionId: crypto.randomUUID(),
         data: {},
@@ -54,8 +54,8 @@ export class CookieSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを保存し、Cookieに設定する値（JSON文字列）を返す
-   * 暗号化はSessionManagerが行う
+   * Save session and return value to set in cookie (JSON string)
+   * Encryption is handled by SessionManager
    */
   save(
     sessionId: string,
@@ -71,9 +71,9 @@ export class CookieSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを破棄
-   * CookieStoreの場合、サーバー側で何もする必要はない
-   * Cookie削除はSessionManagerが行う
+   * Destroy session
+   * For CookieStore, nothing needs to be done on server side
+   * Cookie deletion is handled by SessionManager
    */
   destroy(_sessionId: string): Promise<void> {
     return Promise.resolve();

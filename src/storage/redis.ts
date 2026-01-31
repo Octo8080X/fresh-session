@@ -1,9 +1,9 @@
-// Redis ストレージ実装
+// Redis storage implementation
 import type { ISessionStore, LoadResult, SessionData } from "../types.ts";
 
 /**
- * Redis接続インターフェース
- * 様々なRedisクライアントと互換性を持たせるための抽象化
+ * Redis connection interface
+ * Abstraction for compatibility with various Redis clients
  */
 export interface RedisClient {
   get(key: string): Promise<string | null>;
@@ -12,23 +12,23 @@ export interface RedisClient {
 }
 
 /**
- * RedisセッションストアOptions
+ * Redis session store options
  */
 export interface RedisSessionStoreOptions {
   /**
-   * Redisクライアントインスタンス
+   * Redis client instance
    */
   client: RedisClient;
   /**
-   * キーのプレフィックス
+   * Key prefix
    * @default "session:"
    */
   keyPrefix?: string;
 }
 
 /**
- * Redisベースのセッションストア
- * 分散環境での永続的なセッション管理が可能
+ * Redis-based session store
+ * Enables persistent session management in distributed environments
  */
 export class RedisSessionStore implements ISessionStore {
   #client: RedisClient;
@@ -40,14 +40,14 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションIDからRedisキーを生成
+   * Generate Redis key from session ID
    */
   private getKey(sessionId: string): string {
     return `${this.#keyPrefix}${sessionId}`;
   }
 
   /**
-   * Cookieの値（セッションID）からセッションを復元
+   * Restore session from cookie value (session ID)
    */
   async load(cookieValue: string | undefined): Promise<LoadResult> {
     if (!cookieValue) {
@@ -74,7 +74,7 @@ export class RedisSessionStore implements ISessionStore {
         expiresAt?: string;
       };
 
-      // 有効期限チェック（Redis TTLに加えてアプリレベルでもチェック）
+      // Expiry check (check at app level in addition to Redis TTL)
       if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
         await this.#client.del(this.getKey(cookieValue));
         return {
@@ -90,7 +90,7 @@ export class RedisSessionStore implements ISessionStore {
         isNew: false,
       };
     } catch {
-      // パース失敗時は新規セッション
+      // Return new session on parse failure
       return {
         sessionId: crypto.randomUUID(),
         data: {},
@@ -100,7 +100,7 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを保存し、Cookieに設定する値（セッションID）を返す
+   * Save session and return value to set in cookie (session ID)
    */
   async save(
     sessionId: string,
@@ -129,7 +129,7 @@ export class RedisSessionStore implements ISessionStore {
   }
 
   /**
-   * セッションを破棄
+   * Destroy session
    */
   async destroy(sessionId: string): Promise<void> {
     await this.#client.del(this.getKey(sessionId));

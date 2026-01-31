@@ -64,10 +64,10 @@ Deno.test("encrypt: produces different output each time (random IV)", async () =
   const encrypted1 = await encrypt(original, key);
   const encrypted2 = await encrypt(original, key);
 
-  // 同じ入力でも異なる暗号文になる（IVがランダムなため）
+  // Same input produces different ciphertext (because IV is random)
   assertNotEquals(encrypted1, encrypted2);
 
-  // どちらも正しく復号できる
+  // Both can be decrypted correctly
   assertEquals(await decrypt(encrypted1, key), original);
   assertEquals(await decrypt(encrypted2, key), original);
 });
@@ -76,7 +76,7 @@ Deno.test("encrypt: output is base64 encoded", async () => {
   const key = await generateKey();
   const encrypted = await encrypt("test", key);
 
-  // base64の文字セットのみを含む
+  // Contains only base64 character set
   const base64Regex = /^[A-Za-z0-9+/]+=*$/;
   assertEquals(base64Regex.test(encrypted), true);
 });
@@ -170,7 +170,7 @@ Deno.test("importKey: uses only first 32 characters", async () => {
   const key1 = await importKey(secret1);
   const key2 = await importKey(secret2);
 
-  // 最初の32文字が同じなので同じキーになる
+  // Same key because first 32 characters are the same
   const original = "Test message";
   const encrypted = await encrypt(original, key1);
   const decrypted = await decrypt(encrypted, key2);
@@ -185,7 +185,7 @@ Deno.test("generateKey: creates unique keys", async () => {
   const original = "Test message";
   const encrypted = await encrypt(original, key1);
 
-  // 異なるキーでは復号できない
+  // Cannot decrypt with different key
   await assertRejects(
     async () => await decrypt(encrypted, key2),
     Error,

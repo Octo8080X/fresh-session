@@ -1,4 +1,4 @@
-// セッション管理の主要ロジック
+// Session management main logic
 import {
   mergeSessionConfig,
   type PartialSessionConfig,
@@ -14,7 +14,7 @@ import {
 import { decrypt, encrypt, importKey } from "./crypto.ts";
 
 /**
- * セッションID生成・管理ロジック
+ * Session ID generation and management logic
  */
 export class SessionManager {
   #sessionId: string | undefined = undefined;
@@ -31,7 +31,7 @@ export class SessionManager {
   ) {}
 
   /**
-   * 暗号化キーを取得（遅延初期化）
+   * Get encryption key (lazy initialization)
    */
   private async getCryptoKey(): Promise<CryptoKey> {
     if (!this.#cryptoKey) {
@@ -41,7 +41,7 @@ export class SessionManager {
   }
 
   /**
-   * Cookie値を復号化
+   * Decrypt cookie value
    */
   private async decryptCookieValue(
     encryptedValue: string | undefined,
@@ -53,13 +53,13 @@ export class SessionManager {
       const key = await this.getCryptoKey();
       return await decrypt(encryptedValue, key);
     } catch {
-      // 復号化失敗時は新規セッションとして扱う
+      // Treat as new session if decryption fails
       return undefined;
     }
   }
 
   /**
-   * Cookie値を暗号化
+   * Encrypt cookie value
    */
   private async encryptCookieValue(value: string): Promise<string> {
     const key = await this.getCryptoKey();
@@ -95,14 +95,14 @@ export class SessionManager {
   }
 
   /**
-   * セッション破棄をリクエスト
+   * Request session destruction
    */
   requestDestroySession(): void {
     this.#doSessionDestroy = true;
   }
 
   /**
-   * セッションIDローテーションをリクエスト
+   * Request session ID rotation
    */
   requestRotateSessionId(): void {
     this.#doSessionRotate = true;
@@ -112,7 +112,7 @@ export class SessionManager {
   }
 
   /**
-   * リクエスト処理前: Cookieからセッションを復元
+   * Before request processing: Restore session from cookie
    */
   async before(request: Request): Promise<void> {
     const encryptedCookieValue = getSessionIdFromCookie(
@@ -128,28 +128,28 @@ export class SessionManager {
   }
 
   /**
-   * レスポンス処理後: セッションを保存しCookieを設定
+   * After response processing: Save session and set cookie
    */
   async after(response: Response): Promise<void> {
     if (!this.#sessionId) {
       return;
     }
 
-    // セッション破棄
+    // Session destruction
     if (this.#doSessionDestroy) {
       await this.store.destroy(this.#sessionId);
       deleteSessionCookie(response.headers, this.config.cookieName);
       return;
     }
 
-    // セッションIDローテーション
+    // Session ID rotation
     if (this.#doSessionRotate) {
       await this.store.destroy(this.#sessionId);
-      const { sessionId } = await this.store.load(undefined); // 新規ID取得
+      const { sessionId } = await this.store.load(undefined); // Get new ID
       this.#sessionId = sessionId;
     }
 
-    // セッション保存
+    // Save session
     const cookieValue = await this.store.save(
       this.#sessionId,
       this.#sessionData ?? {},
@@ -201,7 +201,7 @@ export function session<State extends SessionState>(
 ): Middleware<State> {
   const sessionConfig = mergeSessionConfig(config);
   return async (ctx) => {
-    // 各リクエストごとに新しいSessionManagerインスタンスを作成
+    // Create new SessionManager instance for each request
     const sessionManager = new SessionManager(store, secret, sessionConfig);
     await sessionManager.before(ctx.req);
 

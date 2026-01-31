@@ -12,7 +12,7 @@ export interface SessionConfig {
 }
 
 /**
- * 部分的なセッション設定（入力用）
+ * Partial session config (for input)
  */
 export type PartialSessionConfig = {
   cookieName?: string;
@@ -21,7 +21,7 @@ export type PartialSessionConfig = {
 };
 
 /**
- * デフォルト設定値
+ * Default configuration values
  */
 export const defaultSessionConfig: SessionConfig = {
   cookieName: "fresh_session",
@@ -30,16 +30,16 @@ export const defaultSessionConfig: SessionConfig = {
     httpOnly: true,
     secure: true,
     sameSite: "Lax",
-    maxAge: 60 * 60 * 24, // 1日
+    maxAge: 60 * 60 * 24, // 1 day
     domain: "",
   },
-  sessionExpires: 1000 * 60 * 60 * 24, // 1日
+  sessionExpires: 1000 * 60 * 60 * 24, // 1 day
 };
 
 export function mergeSessionConfig(
   inputSessionConfig?: PartialSessionConfig,
 ): SessionConfig {
-  // デフォルト設定に入力設定をマージ
+  // Merge input config with default config
   if (!inputSessionConfig) {
     return { ...defaultSessionConfig };
   }

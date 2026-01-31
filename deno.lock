@@ -23,7 +23,7 @@
     "jsr:@std/semver@^1.0.6": "1.0.8",
     "jsr:@std/uuid@^1.0.9": "1.0.9",
     "npm:@opentelemetry/api@^1.9.0": "1.9.0",
-    "npm:@preact/signals@^2.2.1": "2.6.1_preact@10.28.2",
+    "npm:@preact/signals@^2.2.1": "2.6.1_preact@10.28.3",
     "npm:@types/ioredis-mock@*": "8.2.6_ioredis@5.9.2",
     "npm:alasql@*": "4.17.0",
     "npm:alasql@4": "4.17.0",
@@ -33,9 +33,10 @@
     "npm:ioredis-mock@*": "8.13.1_@types+ioredis-mock@8.2.6__ioredis@5.9.2_ioredis@5.9.2_fengari@0.1.5",
     "npm:ioredis-mock@8": "8.13.1_@types+ioredis-mock@8.2.6__ioredis@5.9.2_ioredis@5.9.2_fengari@0.1.5",
     "npm:ioredis-mock@^8.13.1": "8.13.1_@types+ioredis-mock@8.2.6__ioredis@5.9.2_ioredis@5.9.2_fengari@0.1.5",
-    "npm:preact-render-to-string@^6.6.3": "6.6.5_preact@10.28.2",
-    "npm:preact@^10.27.0": "10.28.2",
-    "npm:preact@^10.27.2": "10.28.2"
+    "npm:preact-render-to-string@^6.6.3": "6.6.5_preact@10.28.3",
+    "npm:preact@^10.27.0": "10.28.3",
+    "npm:preact@^10.27.2": "10.28.3",
+    "npm:preact@^10.28.3": "10.28.3"
   },
   "jsr": {
     "@deno/esbuild-plugin@1.2.0": {
@@ -627,7 +628,7 @@
     "@preact/signals-core@1.12.2": {
       "integrity": "sha512-5Yf8h1Ke3SMHr15xl630KtwPTW4sYDFkkxS0vQ8UiQLWwZQnrF9IKaVG1mN5VcJz52EcWs2acsc/Npjha/7ysA=="
     },
-    "@preact/signals@2.6.1_preact@10.28.2": {
+    "@preact/signals@2.6.1_preact@10.28.3": {
       "integrity": "sha512-Gp3DI1T/0YyirwJnImR8l9xyVJgKiVzJXmEhic1/7SPw3zStrsvuBpwKnD609CzsIdzxprWa6yTNXN+VLLZPGQ==",
       "dependencies": [
         "@preact/signals-core",
@@ -1856,14 +1857,14 @@
     "pirates@4.0.7": {
       "integrity": "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="
     },
-    "preact-render-to-string@6.6.5_preact@10.28.2": {
+    "preact-render-to-string@6.6.5_preact@10.28.3": {
       "integrity": "sha512-O6MHzYNIKYaiSX3bOw0gGZfEbOmlIDtDfWwN1JJdc/T3ihzRT6tGGSEWE088dWrEDGa1u7101q+6fzQnO9XCPA==",
       "dependencies": [
         "preact"
       ]
     },
-    "preact@10.28.2": {
-      "integrity": "sha512-lbteaWGzGHdlIuiJ0l2Jq454m6kcpI1zNje6d8MlGAFlYvP2GO4ibnat7P74Esfz4sPTdM6UxtTwh/d3pwM9JA=="
+    "preact@10.28.3": {
+      "integrity": "sha512-tCmoRkPQLpBeWzpmbhryairGnhW9tKV6c6gr/w+RhoRoKEJwsjzipwp//1oCpGPOchvSLaAPlpcJi9MwMmoPyA=="
     },
     "pretty-format@29.7.0": {
       "integrity": "sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==",
@@ -2276,7 +2277,8 @@
       "jsr:@fresh/core@^2.2.0",
       "jsr:@std/assert@1",
       "jsr:@std/http@1",
-      "npm:ioredis-mock@^8.13.1"
+      "npm:ioredis-mock@^8.13.1",
+      "npm:preact@^10.28.3"
     ]
   }
 }

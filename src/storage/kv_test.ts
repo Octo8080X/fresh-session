@@ -1,7 +1,7 @@
 import { assertEquals, assertExists } from "@std/assert";
 import { KvSessionStore } from "./kv.ts";
 
-// テスト用KVインスタンス（インメモリ）
+// Test KV instance (in-memory)
 async function createTestKv(): Promise<Deno.Kv> {
   return await Deno.openKv(":memory:");
 }
@@ -41,15 +41,15 @@ Deno.test("KvSessionStore: save and load session data", async () => {
   const store = new KvSessionStore({ kv });
 
   try {
-    // 新規セッション作成
+    // Create new session
     const { sessionId } = await store.load(undefined);
     const data = { userId: "user123", role: "admin" };
 
-    // データ保存
+    // Save data
     const cookieValue = await store.save(sessionId, data);
-    assertEquals(cookieValue, sessionId); // KvStoreはsessionIdをそのまま返す
+    assertEquals(cookieValue, sessionId); // KvStore returns sessionId as-is
 
-    // データ読み込み
+    // Load data
     const result = await store.load(sessionId);
     assertEquals(result.sessionId, sessionId);
     assertEquals(result.data, data);
@@ -64,14 +64,14 @@ Deno.test("KvSessionStore: destroy removes session", async () => {
   const store = new KvSessionStore({ kv });
 
   try {
-    // セッション作成と保存
+    // Create and save session
     const { sessionId } = await store.load(undefined);
     await store.save(sessionId, { foo: "bar" });
 
-    // 破棄
+    // Destroy
     await store.destroy(sessionId);
 
-    // 破棄後は新規セッション扱い
+    // After destruction, treated as new session
     const result = await store.load(sessionId);
     assertEquals(result.isNew, true);
     assertEquals(result.data, {});
@@ -87,12 +87,12 @@ Deno.test("KvSessionStore: expired session returns new session", async () => {
   try {
     const sessionId = "expired-session";
     const data = { temp: "data" };
-    const pastDate = new Date(Date.now() - 10000); // 10秒前
+    const pastDate = new Date(Date.now() - 10000); // 10 seconds ago
 
     await store.save(sessionId, data, pastDate);
     const result = await store.load(sessionId);
 
-    // 期限切れなので新規セッション扱い
+    // Treated as new session because expired
     assertEquals(result.isNew, true);
     assertEquals(result.data, {});
   } finally {
@@ -107,7 +107,7 @@ Deno.test("KvSessionStore: non-expired session returns data", async () => {
   try {
     const sessionId = "valid-session";
     const data = { active: true };
-    const futureDate = new Date(Date.now() + 60000); // 1分後
+    const futureDate = new Date(Date.now() + 60000); // 1 minute later
 
     await store.save(sessionId, data, futureDate);
     const result = await store.load(sessionId);
@@ -166,7 +166,7 @@ Deno.test("KvSessionStore: custom key prefix", async () => {
 
     await store.save(sessionId, data);
 
-    // カスタムプレフィックスで保存されていることを確認
+    // Verify saved with custom prefix
     const entry = await kv.get(["custom", "prefix", sessionId]);
     assertExists(entry.value);
 

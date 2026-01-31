@@ -21,7 +21,7 @@ import {
   session,
   type SessionState,
   SqlSessionStore,
-} from "jsr:@octo8080x/fresh-session";
+} from "./mod.ts";
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ import {
   MemorySessionStore,
   session,
   type SessionState,
-} from "jsr:@octo8080x/fresh-session";
+} from "./mod.ts";
 
 // Define your app state
 interface State extends SessionState {
@@ -54,7 +54,7 @@ app.use(session(store, "your-secret-key-at-least-32-characters-long"));
 
 ### 2. Use session in your routes
 
-```tsx
+```tsx ignore
 // routes/index.tsx
 app.get("/", (ctx) => {
   const { session } = ctx.state;
@@ -77,7 +77,7 @@ app.get("/", (ctx) => {
 
 ## Session API
 
-```ts
+```ts ignore
 const { session } = ctx.state;
 
 // Basic operations
@@ -102,7 +102,7 @@ session.rotate(); // Rotate session ID (recommended after login)
 
 Simple in-memory storage. Data is lost when the server restarts.
 
-```ts
+```ts ignore
 import { MemorySessionStore } from "jsr:@octo8080x/fresh-session";
 
 const store = new MemorySessionStore();
@@ -114,7 +114,7 @@ Stores session data in the cookie itself. No server-side storage needed.
 
 > ⚠️ Cookie size limit is ~4KB. Use for small session data only.
 
-```ts
+```ts ignore
 import { CookieSessionStore } from "jsr:@octo8080x/fresh-session";
 
 const store = new CookieSessionStore();
@@ -124,13 +124,9 @@ const store = new CookieSessionStore();
 
 Persistent storage using Deno KV. Recommended for Deno Deploy.
 
-```ts
+```ts ignore
 import { KvSessionStore } from "jsr:@octo8080x/fresh-session";
 
-// Auto-open KV
-const store = new KvSessionStore();
-
-// Or provide your own KV instance
 const kv = await Deno.openKv();
 const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
 ```
@@ -139,11 +135,11 @@ const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
 
 For distributed environments with Redis.
 
-```ts
+```ts ignore
 import {
   type RedisClient,
   RedisSessionStore,
-} from "jsr:@octo8080x/fresh-session";
+} from "./mod.ts";
 import { connect } from "npm:ioredis";
 
 const redis = new Redis({
@@ -182,7 +178,7 @@ CREATE TABLE sessions (
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 ```
 
-```ts
+```ts ignore
 import { type SqlClient, SqlSessionStore } from "jsr:@octo8080x/fresh-session";
 
 // Adapt your SQL client to SqlClient interface
@@ -198,7 +194,7 @@ const store = new SqlSessionStore({ client, tableName: "sessions" });
 
 ## Configuration Options
 
-```ts
+```ts ignore
 app.use(session(store, secret, {
   // Cookie name
   cookieName: "fresh_session", // default
@@ -223,7 +219,7 @@ app.use(session(store, secret, {
 Flash messages are one-time data that get cleared after being read. Perfect for
 success/error messages after redirects.
 
-```tsx
+```tsx ignore
 // In your form handler
 app.post("/login", async (ctx) => {
   const form = await ctx.req.formData();
@@ -260,7 +256,7 @@ app.get("/", (ctx) => {
 Regenerate session ID while keeping session data. Recommended after
 authentication to prevent session fixation attacks.
 
-```ts
+```ts ignore
 app.post("/login", async (ctx) => {
   // ... validate credentials
 
@@ -283,7 +279,7 @@ app.post("/login", async (ctx) => {
 
 This occurs when using `Response.redirect()`. Use this workaround instead:
 
-```ts
+```ts ignore
 // ❌ Don't use Response.redirect()
 return Response.redirect("/dashboard");
 
@@ -305,7 +301,7 @@ return new Response(null, {
 Browser DevTools can cause extra requests (e.g., `/.well-known/`). Add a filter
 for these:
 
-```ts
+```ts ignore
 app.all("/.well-known/*", () => {
   return new Response("{}", {
     status: 200,

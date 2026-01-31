@@ -1,3 +1,4 @@
+import { App } from "@fresh/core";
 import { assertEquals } from "@std/assert";
 import {
   CookieSessionStore,
@@ -10,16 +11,9 @@ import {
   SqlSessionStore,
 } from "./mod.ts";
 import { MockSqlClient } from "./src/storage/sql_test.ts";
-import { App } from "@fresh/core";
-// @ts-types="npm:@types/ioredis-mock"
-import RedisMock from "ioredis-mock";
 
 type State = Record<PropertyKey, never> & SessionState;
 
-// Test secret key (32+ characters required)
-const TEST_SECRET = "this-is-a-test-secret-key-32chars!";
-
-// Extract session cookie value from Set-Cookie header
 function extractSessionCookie(
   response: Response,
   cookieName = "fresh_session",
@@ -31,6 +25,9 @@ function extractSessionCookie(
   return match ? match[1] : null;
 }
 
+
+// Test secret key (32+ characters required)
+const TEST_SECRET = "this-is-a-test-secret-key-32chars!";
 Deno.test("use memory store", async () => {
   const store = new MemorySessionStore();
   const sessionSaveRes = await (async () => {
@@ -153,6 +150,7 @@ Deno.test("use kv store", async () => {
 });
 
 Deno.test("use redis store (ioredis-mock)", async () => {
+  const { default: RedisMock } = await import("ioredis-mock");
   // deno-lint-ignore no-explicit-any
   const redisMock = new (RedisMock as any)();
 
@@ -273,7 +271,9 @@ Deno.test("flash message: set and get on next request", async () => {
         const message = ctx.state.session.flash.get("message") as
           | string
           | undefined;
-        const type = ctx.state.session.flash.get("type") as string | undefined;
+        const type = ctx.state.session.flash.get("type") as
+          | string
+          | undefined;
         const hasMessage = ctx.state.session.flash.has("message");
         return new Response(JSON.stringify({ message, type, hasMessage }));
       }).handler();
@@ -417,7 +417,9 @@ Deno.test("flash message: complex data types", async () => {
     const handler = new App<State>()
       .use(session(store, TEST_SECRET))
       .get("/get", (ctx) => {
-        const formErrors = ctx.state.session.flash.get("formErrors") as Record<
+        const formErrors = ctx.state.session.flash.get(
+          "formErrors",
+        ) as Record<
           string,
           unknown
         >;

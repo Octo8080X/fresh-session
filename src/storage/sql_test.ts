@@ -11,7 +11,7 @@ export class MockSqlClient implements SqlClient {
     { data: string; expires_at: string | null }
   >();
 
-  async execute(
+  execute(
     sql: string,
     params?: unknown[],
   ): Promise<{ rows?: Record<string, unknown>[] }> {
@@ -20,17 +20,17 @@ export class MockSqlClient implements SqlClient {
       const sessionId = params?.[0] as string;
       const entry = this.store.get(sessionId);
       if (!entry) {
-        return { rows: [] };
+        return Promise.resolve({ rows: [] });
       }
       // MySQL expects expires in ISO format
-      return {
+      return Promise.resolve({
         rows: [{
           data: entry.data,
           expires_at: entry.expires_at
             ? entry.expires_at.replace(" ", "T") + "Z"
             : null,
         }],
-      };
+      });
     }
 
     // INSERT ... ON DUPLICATE KEY UPDATE
@@ -39,14 +39,14 @@ export class MockSqlClient implements SqlClient {
       const data = params?.[1] as string;
       const expiresAt = params?.[2] as string | null;
       this.store.set(sessionId, { data, expires_at: expiresAt });
-      return {};
+      return Promise.resolve({});
     }
 
     // DELETE
     if (sql.includes("DELETE") && sql.includes("session_id")) {
       const sessionId = params?.[0] as string;
       this.store.delete(sessionId);
-      return {};
+      return Promise.resolve({});
     }
 
     // DELETE expired (cleanup)
@@ -61,10 +61,10 @@ export class MockSqlClient implements SqlClient {
           }
         }
       }
-      return {};
+      return Promise.resolve({});
     }
 
-    return {};
+    return Promise.resolve({});
   }
 
   // Test helper

@@ -435,3 +435,190 @@ Deno.test("flash message: complex data types", async () => {
   const receivedData = await secondResponse.json();
   assertEquals(receivedData, flashData);
 });
+
+// Tests for sessionExpires configuration
+
+/**
+ * Mock store that captures expiresAt parameter
+ */
+class ExpiresCapturingStore extends MemorySessionStore {
+  public capturedExpiresAt: Date | undefined;
+
+  override async save(
+    sessionId: string,
+    data: Record<string, unknown>,
+    expiresAt?: Date,
+  ): Promise<string> {
+    this.capturedExpiresAt = expiresAt;
+    return await super.save(sessionId, data, expiresAt);
+  }
+}
+
+Deno.test("sessionExpires: default expiration is passed to store", async () => {
+  const store = new ExpiresCapturingStore();
+
+  const handler = new App<State>()
+    .use(session(store, TEST_SECRET))
+    .get("/", (ctx) => {
+      ctx.state.session.set("test", "value");
+      return new Response("OK");
+    }).handler();
+
+  const req = new Request("http://localhost");
+  await handler(req);
+
+  // Default sessionExpires is 1 day (86400000 ms)
+  const oneDayMs = 1000 * 60 * 60 * 24;
+  const expectedMinExpires = Date.now() + oneDayMs - 1000; // Allow 1 second tolerance
+  const expectedMaxExpires = Date.now() + oneDayMs + 1000;
+
+  if (store.capturedExpiresAt) {
+    const expiresTime = store.capturedExpiresAt.getTime();
+    assertEquals(
+      expiresTime >= expectedMinExpires && expiresTime <= expectedMaxExpires,
+      true,
+      `Expected expiresAt around ${new Date(Date.now() + oneDayMs).toISOString()}, got ${store.capturedExpiresAt.toISOString()}`,
+    );
+  } else {
+    throw new Error("expiresAt was not passed to store");
+  }
+});
+
+Deno.test("sessionExpires: custom expiration time is respected", async () => {
+  const store = new ExpiresCapturingStore();
+  const customExpires = 60 * 60 * 1000; // 1 hour
+
+  const handler = new App<State>()
+    .use(session(store, TEST_SECRET, { sessionExpires: customExpires }))
+    .get("/", (ctx) => {
+      ctx.state.session.set("test", "value");
+      return new Response("OK");
+    }).handler();
+
+  const req = new Request("http://localhost");
+  await handler(req);
+
+  const expectedMinExpires = Date.now() + customExpires - 1000;
+  const expectedMaxExpires = Date.now() + customExpires + 1000;
+
+  if (store.capturedExpiresAt) {
+    const expiresTime = store.capturedExpiresAt.getTime();
+    assertEquals(
+      expiresTime >= expectedMinExpires && expiresTime <= expectedMaxExpires,
+      true,
+      `Expected expiresAt around ${new Date(Date.now() + customExpires).toISOString()}, got ${store.capturedExpiresAt.toISOString()}`,
+    );
+  } else {
+    throw new Error("expiresAt was not passed to store");
+  }
+});
+
+Deno.test("sessionExpires: short expiration for quick expiry", async () => {
+  const store = new ExpiresCapturingStore();
+  const shortExpires = 5000; // 5 seconds
+
+  const handler = new App<State>()
+    .use(session(store, TEST_SECRET, { sessionExpires: shortExpires }))
+    .get("/", (ctx) => {
+      ctx.state.session.set("test", "value");
+      return new Response("OK");
+    }).handler();
+
+  const req = new Request("http://localhost");
+  await handler(req);
+
+  const expectedMinExpires = Date.now() + shortExpires - 1000;
+  const expectedMaxExpires = Date.now() + shortExpires + 1000;
+
+  if (store.capturedExpiresAt) {
+    const expiresTime = store.capturedExpiresAt.getTime();
+    assertEquals(
+      expiresTime >= expectedMinExpires && expiresTime <= expectedMaxExpires,
+      true,
+      `Expected expiresAt around ${new Date(Date.now() + shortExpires).toISOString()}, got ${store.capturedExpiresAt.toISOString()}`,
+    );
+  } else {
+    throw new Error("expiresAt was not passed to store");
+  }
+});
+
+Deno.test("sessionExpires: session data expires after configured time", async () => {
+  const store = new MemorySessionStore();
+  const shortExpires = 100; // 100ms for quick test
+
+  // Create session
+  const firstResponse = await (async () => {
+    const handler = new App<State>()
+      .use(session(store, TEST_SECRET, { sessionExpires: shortExpires }))
+      .get("/set", (ctx) => {
+        ctx.state.session.set("data", "test-value");
+        return new Response("OK");
+      }).handler();
+    const req = new Request("http://localhost/set");
+    return await handler(req);
+  })();
+
+  const sessionCookie = extractSessionCookie(firstResponse);
+
+  // Wait for session to expire
+  await new Promise((resolve) => setTimeout(resolve, 150));
+
+  // Try to read expired session
+  const secondResponse = await (async () => {
+    const handler = new App<State>()
+      .use(session(store, TEST_SECRET, { sessionExpires: shortExpires }))
+      .get("/get", (ctx) => {
+        const data = ctx.state.session.get("data");
+        return new Response(data ? String(data) : "no-data");
+      }).handler();
+
+    const req = new Request("http://localhost/get", {
+      headers: {
+        "Cookie": `fresh_session=${sessionCookie}`,
+      },
+    });
+    return await handler(req);
+  })();
+
+  const text = await secondResponse.text();
+  assertEquals(text, "no-data", "Session should have expired");
+});
+
+Deno.test("sessionExpires: session data persists before expiration", async () => {
+  const store = new MemorySessionStore();
+  const longExpires = 60000; // 1 minute
+
+  // Create session
+  const firstResponse = await (async () => {
+    const handler = new App<State>()
+      .use(session(store, TEST_SECRET, { sessionExpires: longExpires }))
+      .get("/set", (ctx) => {
+        ctx.state.session.set("data", "persisted-value");
+        return new Response("OK");
+      }).handler();
+    const req = new Request("http://localhost/set");
+    return await handler(req);
+  })();
+
+  const sessionCookie = extractSessionCookie(firstResponse);
+
+  // Read session immediately (should not be expired)
+  const secondResponse = await (async () => {
+    const handler = new App<State>()
+      .use(session(store, TEST_SECRET, { sessionExpires: longExpires }))
+      .get("/get", (ctx) => {
+        const data = ctx.state.session.get("data");
+        return new Response(data ? String(data) : "no-data");
+      }).handler();
+
+    const req = new Request("http://localhost/get", {
+      headers: {
+        "Cookie": `fresh_session=${sessionCookie}`,
+      },
+    });
+    return await handler(req);
+  })();
+
+  const text = await secondResponse.text();
+  assertEquals(text, "persisted-value", "Session should still be valid");
+});

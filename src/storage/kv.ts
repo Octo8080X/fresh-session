@@ -31,9 +31,8 @@ export class KvSessionStore implements ISessionStore {
     this.#keyPrefix = options.keyPrefix ?? ["sessions"];
   }
 
-  cleanup?(): void {
-    throw new Error("Method not implemented.");
-  }
+  // Note: cleanup() is not implemented for KvSessionStore
+  // Deno KV handles expiration automatically via expireIn option
 
   /**
    * Get KV instance (lazy initialization)

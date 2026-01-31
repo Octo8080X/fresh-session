@@ -216,9 +216,11 @@ export class SessionManager {
     }
 
     // Save session
+    const expiresAt = new Date(Date.now() + this.config.sessionExpires);
     const cookieValue = await this.store.save(
       this.#sessionId,
       this.#sessionData ?? {},
+      expiresAt,
     );
     const encryptedCookieValue = await this.encryptCookieValue(cookieValue);
     setSessionCookie(
@@ -247,7 +249,7 @@ export class SessionManager {
       set: (key: string, value: SessionData) => void;
       has: (key: string) => boolean;
     };
-    sessionId:() => string | undefined;
+    sessionId: () => string | undefined;
     destroy: () => void;
     rotate: () => void;
     isNew: () => boolean;
@@ -287,7 +289,7 @@ export interface SessionState {
       set: (key: string, value: SessionData) => void;
       has: (key: string) => boolean;
     };
-    sessionId:() => string | undefined;
+    sessionId: () => string | undefined;
     destroy: () => void;
     rotate: () => void;
     isNew: () => boolean;

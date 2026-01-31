@@ -28,9 +28,12 @@ export interface ISessionStore {
 
   /**
    * Save session and return value to set in cookie
+   * @param sessionId Session ID
+   * @param data Session data
+   * @param expiresAt Optional expiration date
    * @returns Value to set in cookie (memory: sessionId, cookie: encrypted data)
    */
-  save(sessionId: string, data: SessionData): Promise<string>;
+  save(sessionId: string, data: SessionData, expiresAt?: Date): Promise<string>;
 
   /**
    * Destroy session
@@ -40,5 +43,5 @@ export interface ISessionStore {
   /**
    * Cleanup expired sessions (optional)
    */
-  cleanup?(): void;
+  cleanup?(): void | Promise<void>;
 }

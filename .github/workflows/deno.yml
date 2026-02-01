@@ -40,4 +40,7 @@ jobs:
           path: ${{ env.DENO_DIR }}
 
       - name: Run tests
-        run: deno test -A --quiet
+        run: deno task test
+
+      - name: Run tests doc
+        run: deno task test:doc

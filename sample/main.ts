@@ -48,7 +48,7 @@ switch (Deno.args[0]) {
   }
   case ("postgres"): {
     const { postgresSessionMiddleware } = await import(
-      "./session_postgres.ts",
+      "./session_postgres.ts"
     );
     app.use(postgresSessionMiddleware);
     storeType = "postgres";

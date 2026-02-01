@@ -37,7 +37,8 @@ Sample app notes:
 
 Redis/MySQL/PostgreSQL sample notes:
 
-- Samples read `REDIS_HOST`, `REDIS_PORT`, `MYSQL_HOST`, `MYSQL_PORT`, `POSTGRES_HOST`, `POSTGRES_PORT`
+- Samples read `REDIS_HOST`, `REDIS_PORT`, `MYSQL_HOST`, `MYSQL_PORT`,
+  `POSTGRES_HOST`, `POSTGRES_PORT`
 - Defaults (when using `with-resource`):
   - Redis: `127.0.0.1:6380`
   - MySQL: `127.0.0.1:3307`

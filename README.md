@@ -21,26 +21,38 @@ import {
   session,
   type SessionState,
   SqlSessionStore,
-} from "./mod.ts";
+} from "@octo8080x/fresh-session";
 ```
 
 ## Quick Start
 
 Sample app notes:
+
 - `sample/session.ts` uses `MemorySessionStore`
 - `sample/session_cookie.ts` shows the cookie store pattern
 - `sample/session_kv.ts` shows the Deno KV store pattern
 - `sample/session_redis.ts` shows the Redis store pattern
+- `sample/session_mysql.ts` shows the MySQL store pattern
+- `sample/session_postgres.ts` shows the PostgreSQL store pattern
 
-Redis sample notes:
-- Uses `REDIS_HOST` and `REDIS_PORT` (defaults: `127.0.0.1:6379`)
+Redis/MySQL/PostgreSQL sample notes:
+
+- Samples read `REDIS_HOST`, `REDIS_PORT`, `MYSQL_HOST`, `MYSQL_PORT`, `POSTGRES_HOST`, `POSTGRES_PORT`
+- Defaults (when using `with-resource`):
+  - Redis: `127.0.0.1:6380`
+  - MySQL: `127.0.0.1:3307`
+  - PostgreSQL: `127.0.0.1:5433`
 
 ### 1. Create a session middleware
 
 ```ts
 // routes/_middleware.ts
 import { App } from "@fresh/core";
-import { MemorySessionStore, session, type SessionState } from "./mod.ts";
+import {
+  MemorySessionStore,
+  session,
+  type SessionState,
+} from "@octo8080x/fresh-session";
 
 // Define your app state
 interface State extends SessionState {
@@ -141,7 +153,7 @@ const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
 For distributed environments with Redis.
 
 ```ts ignore
-import { type RedisClient, RedisSessionStore } from "./mod.ts";
+import { type RedisClient, RedisSessionStore } from "@octo8080x/fresh-session";
 import { connect } from "jsr:@db/redis";
 
 const redis = await connect({
@@ -153,8 +165,9 @@ const redis = await connect({
 const client: RedisClient = {
   get: (key) => redis.get(key),
   set: (key, value, options) =>
-    redis.set(key, value, options?.ex ? { ex: options.ex } : undefined),
-  del: (key) => redis.del(key),
+    redis.set(key, value, options?.ex ? { ex: options.ex } : undefined)
+      .then(() => {}),
+  del: (key) => redis.del(key).then(() => {}),
 };
 
 const store = new RedisSessionStore({ client, keyPrefix: "session:" });
@@ -175,7 +188,7 @@ CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 ```
 
 ```ts ignore
-import { type SqlClient, SqlSessionStore } from "jsr:@octo8080x/fresh-session";
+import { type SqlClient, SqlSessionStore } from "@octo8080x/fresh-session";
 
 // Adapt your SQL client to SqlClient interface
 const client: SqlClient = {
@@ -186,7 +199,45 @@ const client: SqlClient = {
 };
 
 const store = new SqlSessionStore({ client, tableName: "sessions" });
+// For PostgreSQL:
+// const store = new SqlSessionStore({ client, tableName: "sessions", dialect: "postgres" });
 ```
+
+## Samples
+
+```sh
+deno task sample:memory
+deno task sample:cookie
+deno task sample:kv
+deno task sample:redis
+deno task sample:mysql
+deno task sample:postgres
+```
+
+All Redis/MySQL/PostgreSQL samples use `scripts/with-resource.ts`, which starts
+Docker containers and injects environment variables.
+
+## Tasks and Permissions
+
+This repo uses named permissions for the resource wrapper:
+
+```json
+"permissions": {
+  "with-resource": {
+    "run": ["docker", "deno"],
+    "env": [
+      "MYSQL_DATABASE",
+      "MYSQL_USER",
+      "MYSQL_PASSWORD",
+      "POSTGRES_DATABASE",
+      "POSTGRES_USER",
+      "POSTGRES_PASSWORD"
+    ]
+  }
+}
+```
+
+Tasks that start containers use `-P=with-resource`.
 
 ## Configuration Options
 

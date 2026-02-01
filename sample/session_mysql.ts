@@ -1,4 +1,4 @@
-import { SqlSessionStore, session } from "@octo8080x/fresh-session";
+import { session, SqlSessionStore } from "@octo8080x/fresh-session";
 import mysql from "mysql2/promise";
 import type { State } from "./main.ts";
 

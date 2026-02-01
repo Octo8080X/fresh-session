@@ -21,6 +21,11 @@ export interface SqlSessionStoreOptions {
    */
   client: SqlClient;
   /**
+   * SQL dialect
+   * @default "mysql"
+   */
+  dialect?: "mysql" | "postgres";
+  /**
    * Table name
    * @default "sessions"
    */
@@ -44,10 +49,12 @@ export interface SqlSessionStoreOptions {
 export class SqlSessionStore implements ISessionStore {
   #client: SqlClient;
   #tableName: string;
+  #dialect: "mysql" | "postgres";
 
   constructor(options: SqlSessionStoreOptions) {
     this.#client = options.client;
     this.#tableName = options.tableName ?? "sessions";
+    this.#dialect = options.dialect ?? "mysql";
   }
 
   /**
@@ -63,8 +70,9 @@ export class SqlSessionStore implements ISessionStore {
     }
 
     try {
+      const selectPlaceholder = this.#dialect === "postgres" ? "$1" : "?";
       const result = await this.#client.execute(
-        `SELECT data, expires_at FROM ${this.#tableName} WHERE session_id = ?`,
+        `SELECT data, expires_at FROM ${this.#tableName} WHERE session_id = ${selectPlaceholder}`,
         [cookieValue],
       );
 
@@ -150,13 +158,23 @@ export class SqlSessionStore implements ISessionStore {
     const expiresAtStr =
       expiresAt?.toISOString().slice(0, 19).replace("T", " ") ?? null;
 
-    // UPSERT (INSERT ... ON DUPLICATE KEY UPDATE)
-    await this.#client.execute(
-      `INSERT INTO ${this.#tableName} (session_id, data, expires_at)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE data = VALUES(data), expires_at = VALUES(expires_at)`,
-      [sessionId, dataJson, expiresAtStr],
-    );
+    if (this.#dialect === "postgres") {
+      await this.#client.execute(
+        `INSERT INTO ${this.#tableName} (session_id, data, expires_at)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (session_id)
+         DO UPDATE SET data = EXCLUDED.data, expires_at = EXCLUDED.expires_at`,
+        [sessionId, dataJson, expiresAtStr],
+      );
+    } else {
+      // UPSERT (INSERT ... ON DUPLICATE KEY UPDATE)
+      await this.#client.execute(
+        `INSERT INTO ${this.#tableName} (session_id, data, expires_at)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE data = VALUES(data), expires_at = VALUES(expires_at)`,
+        [sessionId, dataJson, expiresAtStr],
+      );
+    }
 
     return sessionId;
   }
@@ -165,8 +183,9 @@ export class SqlSessionStore implements ISessionStore {
    * Destroy session
    */
   async destroy(sessionId: string): Promise<void> {
+    const deletePlaceholder = this.#dialect === "postgres" ? "$1" : "?";
     await this.#client.execute(
-      `DELETE FROM ${this.#tableName} WHERE session_id = ?`,
+      `DELETE FROM ${this.#tableName} WHERE session_id = ${deletePlaceholder}`,
       [sessionId],
     );
   }

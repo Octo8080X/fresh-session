@@ -1,4 +1,8 @@
-import { RedisSessionStore, session, type RedisClient } from "@octo8080x/fresh-session";
+import {
+  type RedisClient,
+  RedisSessionStore,
+  session,
+} from "@octo8080x/fresh-session";
 import { connect } from "@db/redis";
 import type { State } from "./main.ts";
 

@@ -7,22 +7,38 @@
     "sample": "deno run -EN --watch sample/main.ts",
     "sample:memory": "deno run -EN --watch sample/main.ts memory",
     "sample:cookie": "deno run -EN --watch sample/main.ts cookie",
-    "sample:redis": "deno run -A scripts/with-resource.ts -- deno run -EN --watch sample/main.ts redis",
+    "sample:redis": "deno run -P=with-resource scripts/with-resource.ts -- deno run -EN --watch sample/main.ts redis",
     "sample:kv": "deno run -EN --watch sample/main.ts kv",
-    "sample:mysql": "deno run -A scripts/with-resource.ts -- deno run -EN --watch sample/main.ts mysql",
-    "test": "deno run -A scripts/with-resource.ts -- deno test -EN",
-    "test:doc": "deno run -A scripts/with-resource.ts -- deno test --doc -EN"
+    "sample:mysql": "deno run -P=with-resource scripts/with-resource.ts -- deno run -EN --watch sample/main.ts mysql",
+    "sample:postgres": "deno run -P=with-resource scripts/with-resource.ts -- deno run -EN --watch sample/main.ts postgres",
+    "test": "deno run -P=with-resource scripts/with-resource.ts -- deno test -EN",
+    "test:doc": "deno run -P=with-resource scripts/with-resource.ts -- deno test --doc -EN README.md"
   },
   "test": {
     "include": ["mod_test.ts", "src/**/*_test.ts"]
   },
+  "permissions": {
+    "with-resource": {
+      "run": ["docker", "deno"],
+      "env": [
+        "MYSQL_DATABASE",
+        "MYSQL_USER",
+        "MYSQL_PASSWORD",
+        "POSTGRES_DATABASE",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD"
+      ]
+    }
+  },
   "license": "MIT",
   "imports": {
+    "@octo8080x/fresh-session": "./mod.ts",
     "@db/redis": "jsr:@db/redis@^0.40.0",
     "@fresh/core": "jsr:@fresh/core@^2.2.0",
     "@std/assert": "jsr:@std/assert@1",
     "@std/http/cookie": "jsr:@std/http@1/cookie",
     "mysql2": "npm:mysql2@^3.16.2",
+    "pg": "npm:pg@^8.11.5",
     "preact": "npm:preact@^10.28.3"
   },
   "unstable": [

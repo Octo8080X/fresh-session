@@ -116,25 +116,31 @@ async function withStore<T>(
   }
 }
 
-sqlTest("SqlSessionStore: load with undefined cookie creates new session", async () => {
-  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
-    const result = await store.load(undefined);
+sqlTest(
+  "SqlSessionStore: load with undefined cookie creates new session",
+  async () => {
+    await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+      const result = await store.load(undefined);
 
-    assertExists(result.sessionId);
-    assertEquals(result.data, {});
-    assertEquals(result.isNew, true);
-  });
-});
+      assertExists(result.sessionId);
+      assertEquals(result.data, {});
+      assertEquals(result.isNew, true);
+    });
+  },
+);
 
-sqlTest("SqlSessionStore: load with non-existent sessionId creates new session", async () => {
-  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
-    const result = await store.load("non-existent-session");
+sqlTest(
+  "SqlSessionStore: load with non-existent sessionId creates new session",
+  async () => {
+    await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+      const result = await store.load("non-existent-session");
 
-    assertExists(result.sessionId);
-    assertEquals(result.data, {});
-    assertEquals(result.isNew, true);
-  });
-});
+      assertExists(result.sessionId);
+      assertEquals(result.data, {});
+      assertEquals(result.isNew, true);
+    });
+  },
+);
 
 sqlTest("SqlSessionStore: save and load session data", async () => {
   await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {

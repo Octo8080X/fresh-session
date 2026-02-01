@@ -1,15 +1,15 @@
-import { MemorySessionStore, session } from "../../fresh-session/mod.ts";
+import { KvSessionStore, session } from "@octo8080x/fresh-session";
 import type { State } from "./main.ts";
 
-// Session store instance (persists while server is running)
-const sessionStore = new MemorySessionStore();
+// KvSessionStore (persistent storage via Deno KV)
+const kvSessionStore = new KvSessionStore();
 
 /**
- * Session middleware
- * Manages sessions using MemorySessionStore
+ * Session middleware (KV store)
+ * Stores session data in Deno KV
  */
-export const sessionMiddleware = session<State>(
-  sessionStore,
+export const kvSessionMiddleware = session<State>(
+  kvSessionStore,
   "your-secret-key-at-least-32-characters-long", // In production, get from environment variable
   {
     cookieName: "session",

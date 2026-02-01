@@ -5,6 +5,9 @@
   "tasks": {
     "dev": "deno test -E --watch",
     "sample": "deno run -EN --watch sample/main.ts",
+    "sample:memory": "deno run -EN --watch sample/main.ts memory",
+    "sample:cookie": "deno run -EN --watch sample/main.ts cookie",
+    "sample:kv": "deno run -EN --watch sample/main.ts kv",
     "test": "deno test -E",
     "test:doc": "deno test --doc -E"
   },

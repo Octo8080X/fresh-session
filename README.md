@@ -26,6 +26,11 @@ import {
 
 ## Quick Start
 
+Sample app notes:
+- `sample/session.ts` uses `MemorySessionStore`
+- `sample/session_cookie.ts` shows the cookie store pattern
+- `sample/session_kv.ts` shows the Deno KV store pattern
+
 ### 1. Create a session middleware
 
 ```ts

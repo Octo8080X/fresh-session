@@ -1,5 +1,7 @@
 import { App, createDefine, staticFiles } from "@fresh/core";
-import { sessionMiddleware } from "./session.ts";
+import { memorySessionMiddleware } from "./session_memory.ts";
+import { cookieSessionMiddleware } from "./session_cookie.ts";
+import { kvSessionMiddleware } from "./session_kv.ts";
 import { registerSessionDemoRoutes } from "./session_demo.tsx";
 import type { SessionState } from "../src/session.ts";
 
@@ -21,8 +23,29 @@ app.all("/.well-known/*", () => {
   });
 });
 
+let storeType = "memory";
+
 // Add session middleware
-app.use(sessionMiddleware);
+switch(Deno.args[0]){
+  case("cookie"): {
+    app.use(cookieSessionMiddleware);
+    storeType = "cookie";
+    break;
+  }
+  case("memory"): {
+    app.use(memorySessionMiddleware);
+    storeType = "memory";
+    break;
+  }
+  case("kv"): {
+    app.use(kvSessionMiddleware);
+    storeType = "kv";
+    break;
+  }
+  default: {
+    app.use(memorySessionMiddleware);
+  }
+}
 
 const exampleLoggerMiddleware = define.middleware((ctx) => {
   console.log(`${ctx.req.method} ${ctx.req.url}`);
@@ -31,7 +54,7 @@ const exampleLoggerMiddleware = define.middleware((ctx) => {
 app.use(exampleLoggerMiddleware);
 
 // Register session demo routes
-registerSessionDemoRoutes(app);
+registerSessionDemoRoutes(app, storeType);
 
 // When no route matches, redirect to top page
 app.use((ctx) => {

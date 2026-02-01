@@ -4,7 +4,7 @@ import type { State } from "./main.ts";
 /**
  * Register session demo page routes
  */
-export function registerSessionDemoRoutes(app: App<State>) {
+export function registerSessionDemoRoutes(app: App<State>, storeType: string) {
   // GET / - Display demo page
   app.get("/", (ctx) => {
     // Get visit count from session
@@ -92,6 +92,23 @@ export function registerSessionDemoRoutes(app: App<State>) {
                   }}
                 >
                   {sessionId}
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style={{ padding: "0.5rem", borderBottom: "1px solid #ccc" }}
+                >
+                  Store Type:
+                </td>
+                <td
+                  style={{
+                    padding: "0.5rem",
+                    borderBottom: "1px solid #ccc",
+                    fontWeight: "bold",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {storeType}
                 </td>
               </tr>
               <tr>

@@ -1,6 +1,6 @@
 {
   "name": "@octo/fresh-session",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "exports": "./mod.ts",
   "tasks": {
     "dev": "deno test -E --watch",

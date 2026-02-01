@@ -1,175 +1,362 @@
 # Fresh Session 🍋
 
-Dead simple cookie-based session for [Deno Fresh](https://fresh.deno.dev).
+Dead simple cookie-based session for [Deno Fresh v2](https://fresh.deno.dev).
 
-## Get started
+## Features
 
-Fresh Session comes with a simple middleware to add at the root of your project,
-which will create or resolve a session from the request cookie.
+- 🔐 **AES-GCM 256-bit encryption** - Secure session data with encrypted cookies
+- 💾 **Multiple storage backends** - Memory, Cookie, Deno KV, Redis, SQL
+- ⚡ **Flash messages** - One-time messages for redirects
+- 🔄 **Session rotation** - Regenerate session ID for security
+- 🎯 **TypeScript first** - Full type safety
 
-### Install / Import
-
-You can import Fresh Session like so:
+## Installation
 
 ```ts
 import {
-  cookieSession,
-  CookieSessionStorage,
-  createCookieSessionStorage,
-  Session,
-  WithSession,
-} from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
+  CookieSessionStore,
+  KvSessionStore,
+  MemorySessionStore,
+  RedisSessionStore,
+  session,
+  type SessionState,
+  SqlSessionStore,
+} from "@octo/fresh-session";
 ```
 
-### Setup secret key
+## Quick Start
 
-Fresh Session currently uses
-[iron-webcrypto](https://github.com/brc-dd/iron-webcrypto) encrypted cookie
-contents.
+Sample app notes:
 
-iron-webcrypto requires a secret key to encrypt the session payload. Fresh
-Session uses the secret key from your
-[environment variable](https://deno.land/std/dotenv/load.ts) `APP_KEY`.
+- `sample/session_memory.ts` uses `MemorySessionStore`
+- `sample/session_cookie.ts` shows the cookie store pattern
+- `sample/session_kv.ts` shows the Deno KV store pattern
+- `sample/session_redis.ts` shows the Redis store pattern
+- `sample/session_mysql.ts` shows the MySQL store pattern
+- `sample/session_postgres.ts` shows the PostgreSQL store pattern
 
-If you don't know how to setup environment variable locally, I wrote
-[an article about .env file in Deno Fresh](https://xstevenyung.com/blog/read-.env-file-in-deno-fresh).
+Redis/MySQL/PostgreSQL sample notes:
 
-### Create a root middleware (`./routes/_middleware.ts`)
+- Samples read `REDIS_HOST`, `REDIS_PORT`, `MYSQL_HOST`, `MYSQL_PORT`,
+  `POSTGRES_HOST`, `POSTGRES_PORT`
+- Defaults (when using `with-resource`):
+  - Redis: `127.0.0.1:6380`
+  - MySQL: `127.0.0.1:3307`
+  - PostgreSQL: `127.0.0.1:5433`
+
+### 1. Create a session middleware
 
 ```ts
-import { MiddlewareHandlerContext } from "$fresh/server.ts";
-import { cookieSession, WithSession } from "fresh-session";
+// routes/_middleware.ts
+import { App } from "@fresh/core";
+import {
+  MemorySessionStore,
+  session,
+  type SessionState,
+} from "@octo/fresh-session";
 
-export type State = {} & WithSession;
-
-const session = cookieSession();
-
-function sessionHandler(req: Request, ctx: MiddlewareHandlerContext<State>) {
-  return session(req, ctx);
+// Define your app state
+interface State extends SessionState {
+  // your other state properties
 }
-export const handler = [sessionHandler];
+
+const app = new App<State>();
+
+// Create a store instance
+const store = new MemorySessionStore();
+
+// Add session middleware
+// Secret key must be at least 32 characters for AES-256
+app.use(session(store, "your-secret-key-at-least-32-characters-long"));
 ```
 
-Learn more about
-[Fresh route middleware](https://fresh.deno.dev/docs/concepts/middleware).
+### 2. Use session in your routes
 
-### Interact with the session in your routes
+```tsx ignore
+// routes/index.tsx
+app.get("/", (ctx) => {
+  const { session } = ctx.state;
 
-Now that the middleware is setup, it's going to handle creating/resolving
-session based on the request cookie. So all that you need to worry about is
-interacting with your session.
+  // Get value from session
+  const count = (session.get("count") as number) ?? 0;
 
-```tsx
-// ./routes/dashboard.tsx
-import { Handlers, PageProps } from "$fresh/server.ts";
-import { WithSession } from "https://deno.land/x/fresh_session@0.2.0/mod.ts";
+  // Set value to session
+  session.set("count", count + 1);
 
-export type Data = { session: Record<string, string> };
+  // Check if session is new
+  const isNew = session.isNew();
 
-export const handler: Handlers<
-  Data,
-  WithSession // indicate with Typescript that the session is in the `ctx.state`
-> = {
-  GET(_req, ctx) {
-    // The session is accessible via the `ctx.state`
-    const { session } = ctx.state;
+  // Get session ID
+  const sessionId = session.sessionId();
 
-    // Access data stored in the session
-    session.get("email");
-    // Set new value in the session
-    session.set("email", "hello@deno.dev");
-    // returns `true` if the session has a value with a specific key, else `false`
-    session.has("email");
-    // clear all the session data
-    session.clear();
-    // Access all session data value as an object
-    session.data;
-    // Add flash data which will disappear after accessing it
-    session.flash("success", "Successfully flashed a message!");
-    // Accessing the flashed data
-    // /!\ This flashed data will disappear after accessing it one time.
-    session.flash("success");
-    // Session Key Rotation only kv store and redis store.
-    // Is not work in cookie store.
-
-    // Rotate the session key. Only supported by the kv store and redis store, not the cookie store.
-    // If using the session for authentication, with a kv or redis store, it is recommended to rotate the key at login to prevent session fixation attack.
-    // The cookie store is immune from this issue.
-    session.keyRotate();
-
-    return ctx.render({
-      session: session.data, // You can pass the whole session data to the page
-    });
-  },
-};
-
-export default function Dashboard({ data }: PageProps<Data>) {
-  return <div>You are logged in as {data.session.email}</div>;
-}
+  return ctx.render(<div>Visit count: {count + 1}</div>);
+});
 ```
 
-## Usage Cookie Options
+## Session API
 
-session value is cookie. can set the option for cookie.
+```ts ignore
+const { session } = ctx.state;
 
-```ts
-import { cookieSession } from "fresh-session";
+// Basic operations
+session.get("key"); // Get a value
+session.set("key", value); // Set a value
+session.isNew(); // Check if session is new
+session.sessionId(); // Get session ID
 
-export const handler = [
-  cookieSession({
-    maxAge: 30, //Session keep is 30 seconds.
-    httpOnly: true,
-  }),
-];
+// Flash messages (one-time data)
+session.flash.set("message", "Success!"); // Set flash data
+session.flash.get("message"); // Get & consume flash data
+session.flash.has("message"); // Check if flash exists
+
+// Security
+session.destroy(); // Destroy session
+session.rotate(); // Rotate session ID (recommended after login)
 ```
 
-## cookie session based on Redis
+## Storage Backends
 
-In addition to storing session data in cookies, values can be stored in Redis.
+### Memory Store (Development)
 
-```ts
-import { redisSession } from "fresh-session/mod.ts";
-import { connect } from "redis/mod.ts";
+Simple in-memory storage. Data is lost when the server restarts.
+
+```ts ignore
+import { MemorySessionStore } from "@octo/fresh-session";
+
+const store = new MemorySessionStore();
+```
+
+### Cookie Store
+
+Stores session data in the cookie itself. No server-side storage needed.
+
+> ⚠️ Cookie size limit is ~4KB. Use for small session data only.
+
+```ts ignore
+import { CookieSessionStore } from "@octo/fresh-session";
+
+const store = new CookieSessionStore();
+```
+
+### Deno KV Store
+
+Persistent storage using Deno KV. Recommended for Deno Deploy.
+
+```ts ignore
+import { KvSessionStore } from "@octo/fresh-session";
+
+const kv = await Deno.openKv();
+const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
+```
+
+### Redis Store
+
+For distributed environments with Redis.
+
+```ts ignore
+import { type RedisClient, RedisSessionStore } from "@octo/fresh-session";
+import { connect } from "jsr:@db/redis";
 
 const redis = await connect({
-  hostname: "something redis server",
+  hostname: "127.0.0.1",
   port: 6379,
 });
 
-export const handler = [redisSession(redis)];
+// Adapt to RedisClient interface
+const client: RedisClient = {
+  get: (key) => redis.get(key),
+  set: (key, value, options) =>
+    redis.set(key, value, options?.ex ? { ex: options.ex } : undefined)
+      .then(() => {}),
+  del: (key) => redis.del(key).then(() => {}),
+};
 
-// or Customizable cookie options and Redis key prefix
-
-export const handler = [
-  redisSession(redis, {
-    keyPrefix: "S_",
-    maxAge: 10,
-  }),
-];
+const store = new RedisSessionStore({ client, keyPrefix: "session:" });
 ```
 
-## FAQ &amp; Troubleshooting Errors
+### SQL Store (MySQL, PostgreSQL, etc.)
 
-Some common questions and troubleshooting errors.
+For applications using relational databases.
 
-### "TypeError: Headers are immutable."
+```sql
+-- Required table structure (MySQL)
+CREATE TABLE sessions (
+  session_id VARCHAR(36) PRIMARY KEY,
+  data TEXT NOT NULL,
+  expires_at DATETIME NULL
+);
+CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 
-If you are receiving this error, you are likely using a Response.redirect, which
-makes the headers immutable. A workaround for this is to use the following
-instead:
+-- PostgreSQL example
+CREATE TABLE sessions (
+  session_id VARCHAR(36) PRIMARY KEY,
+  data TEXT NOT NULL,
+  expires_at TIMESTAMP NULL
+);
+CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+```
 
-```ts
-new Response(null, {
-  status: 302,
-  headers: {
-    Location: "your-url",
+```ts ignore
+import { type SqlClient, SqlSessionStore } from "@octo/fresh-session";
+
+// Adapt your SQL client to SqlClient interface
+const client: SqlClient = {
+  execute: async (sql, params) => {
+    const result = await yourDbClient.query(sql, params);
+    return { rows: result.rows };
   },
+};
+
+const store = new SqlSessionStore({ client, tableName: "sessions" });
+// For PostgreSQL:
+// const store = new SqlSessionStore({ client, tableName: "sessions", dialect: "postgres" });
+```
+
+## Samples
+
+```sh
+deno task sample:memory
+deno task sample:cookie
+deno task sample:kv
+deno task sample:redis
+deno task sample:mysql
+deno task sample:postgres
+```
+
+All Redis/MySQL/PostgreSQL samples use `scripts/with-resource.ts`, which starts
+Docker containers and injects environment variables.
+
+## Tasks and Permissions
+
+This repo uses named permissions for the resource wrapper:
+
+```json
+"permissions": {
+  "with-resource": {
+    "run": ["docker", "deno"],
+    "env": [
+      "MYSQL_DATABASE",
+      "MYSQL_USER",
+      "MYSQL_PASSWORD",
+      "POSTGRES_DATABASE",
+      "POSTGRES_USER",
+      "POSTGRES_PASSWORD"
+    ]
+  }
+}
+```
+
+Tasks that start containers use `-P=with-resource`.
+
+## Configuration Options
+
+```ts ignore
+app.use(session(store, secret, {
+  // Cookie name
+  cookieName: "fresh_session", // default
+
+  // Cookie options
+  cookieOptions: {
+    path: "/",
+    httpOnly: true,
+    secure: true, // Set to false for local development
+    sameSite: "Lax", // "Strict" | "Lax" | "None"
+    maxAge: 60 * 60 * 24, // 1 day in seconds
+    domain: "",
+  },
+
+  // Session expiration in milliseconds
+  sessionExpires: 1000 * 60 * 60 * 24, // 1 day (default)
+}));
+```
+
+## Flash Messages
+
+Flash messages are one-time data that get cleared after being read. Perfect for
+success/error messages after redirects.
+
+```tsx ignore
+// In your form handler
+app.post("/login", async (ctx) => {
+  const form = await ctx.req.formData();
+  // ... validate login
+
+  if (success) {
+    ctx.state.session.flash.set("message", "Login successful!");
+    ctx.state.session.flash.set("type", "success");
+  } else {
+    ctx.state.session.flash.set("message", "Invalid credentials");
+    ctx.state.session.flash.set("type", "error");
+  }
+
+  return new Response(null, {
+    status: 302,
+    headers: { Location: "/" },
+  });
+});
+
+// In your page
+app.get("/", (ctx) => {
+  const message = ctx.state.session.flash.get("message"); // Read & clear
+  const type = ctx.state.session.flash.get("type");
+
+  // message is now cleared and won't appear on next request
+  return ctx.render(
+    <div>{message && <Alert type={type}>{message}</Alert>}</div>,
+  );
 });
 ```
 
-## Credit
+## Session Rotation
 
-Initial work done by [@xstevenyung](https://github.com/xstevenyung)
+Regenerate session ID while keeping session data. Recommended after
+authentication to prevent session fixation attacks.
 
-Inspiration taken from [Oak Sessions](https://github.com/jcs224/oak_sessions) &
-thanks to [@jcs224](https://github.com/jcs224) for all the insight!
+```ts ignore
+app.post("/login", async (ctx) => {
+  // ... validate credentials
+
+  if (authenticated) {
+    // Rotate session ID for security
+    ctx.state.session.rotate();
+    ctx.state.session.set("userId", user.id);
+  }
+
+  return new Response(null, {
+    status: 302,
+    headers: { Location: "/dashboard" },
+  });
+});
+```
+
+## FAQ & Troubleshooting
+
+### "TypeError: Headers are immutable."
+
+This occurs when using `Response.redirect()`. Use this workaround instead:
+
+```ts ignore
+// ❌ Don't use Response.redirect()
+return Response.redirect("/dashboard");
+
+// ✅ Use this instead
+return new Response(null, {
+  status: 302,
+  headers: { Location: "/dashboard" },
+});
+```
+
+### Session not persisting
+
+1. Make sure your secret key is at least 32 characters
+2. Check that `secure: false` is set for local development (non-HTTPS)
+3. Verify the session middleware is added before your routes
+
+## License
+
+MIT
+
+## Credits
+
+- Initial work by [@xstevenyung](https://github.com/xstevenyung)
+- Inspiration from [Oak Sessions](https://github.com/jcs224/oak_sessions)

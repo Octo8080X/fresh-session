@@ -5,9 +5,9 @@ name: Deno Deploy & Test
 
 on:
   push:
-    branches: ["main","test"]
+    branches: ["main", "test"]
   pull_request:
-    branches: ["main","test"]
+    branches: ["main", "test"]
 
 permissions:
   id-token: write # This is required to allow the GitHub Action to authenticate with Deno Deploy.
@@ -28,11 +28,11 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.35.2
-          
-      - name: Verify formatting   
+          deno-version: v2.6.6
+
+      - name: Verify formatting
         run: deno fmt --check
-      
+
       - name: Cache Deno dependencies
         uses: actions/cache@v3
         with:
@@ -40,4 +40,7 @@ jobs:
           path: ${{ env.DENO_DIR }}
 
       - name: Run tests
-        run: deno test -A --quiet
+        run: deno task test
+
+      - name: Run tests doc
+        run: deno task test:doc

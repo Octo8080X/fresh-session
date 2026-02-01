@@ -16,28 +16,20 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      DENO_ENV: testing
-      BASE_URL: http://localhost:8000
-      DENO_DIR: deno_dir
-      APP_KEY: password-at-least-32-characters-long
     steps:
       - name: Setup repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v2.6.6
+          deno-version: v2.x
 
-      - name: Verify formatting
+      - name: Format
         run: deno fmt --check
 
-      - name: Cache Deno dependencies
-        uses: actions/cache@v3
-        with:
-          key: denoDeps-${{ hashFiles('deno.lock') }}
-          path: ${{ env.DENO_DIR }}
+      - name: Lint
+        run: deno lint
 
       - name: Run tests
         run: deno task test

@@ -36,9 +36,7 @@ export interface SqlSessionStoreOptions {
  * CREATE TABLE sessions (
  *   session_id VARCHAR(36) PRIMARY KEY,
  *   data TEXT NOT NULL,
- *   expires_at DATETIME NULL,
- *   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
- *   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+ *   expires_at DATETIME NULL
  * );
  * CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
  * ```
@@ -82,7 +80,30 @@ export class SqlSessionStore implements ISessionStore {
 
       // Expiry check
       if (row.expires_at) {
-        const expiresAt = new Date(row.expires_at as string);
+        const rawExpires = row.expires_at instanceof Date
+          ? row.expires_at
+          : typeof row.expires_at === "string"
+          ? row.expires_at
+          : row.expires_at instanceof Uint8Array
+          ? new TextDecoder().decode(row.expires_at)
+          : String(row.expires_at);
+
+        const expiresAt = rawExpires instanceof Date
+          ? new Date(Date.UTC(
+            rawExpires.getFullYear(),
+            rawExpires.getMonth(),
+            rawExpires.getDate(),
+            rawExpires.getHours(),
+            rawExpires.getMinutes(),
+            rawExpires.getSeconds(),
+            rawExpires.getMilliseconds(),
+          ))
+          : (() => {
+            const normalized = rawExpires.replace(" ", "T");
+            const hasZone = /Z|[+-]\d{2}:?\d{2}$/.test(normalized);
+            const isoValue = hasZone ? normalized : `${normalized}Z`;
+            return new Date(isoValue);
+          })();
         if (expiresAt < new Date()) {
           // Delete if expired
           await this.destroy(cookieValue);
@@ -94,7 +115,13 @@ export class SqlSessionStore implements ISessionStore {
         }
       }
 
-      const data = JSON.parse(row.data as string) as SessionData;
+      const rawData = row.data;
+      const dataText = typeof rawData === "string"
+        ? rawData
+        : rawData instanceof Uint8Array
+        ? new TextDecoder().decode(rawData)
+        : String(rawData);
+      const data = JSON.parse(dataText) as SessionData;
 
       return {
         sessionId: cookieValue,

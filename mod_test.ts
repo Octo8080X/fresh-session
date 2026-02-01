@@ -4,13 +4,13 @@ import {
   CookieSessionStore,
   KvSessionStore,
   MemorySessionStore,
-  type RedisClient,
   RedisSessionStore,
   session,
   type SessionState,
   SqlSessionStore,
 } from "./mod.ts";
-import { MockSqlClient } from "./src/storage/sql_test.ts";
+import { createRedisClient } from "./src/storage/redis_test.ts";
+import mysql from "mysql2/promise";
 
 type State = Record<PropertyKey, never> & SessionState;
 
@@ -27,6 +27,109 @@ function extractSessionCookie(
 
 // Test secret key (32+ characters required)
 const TEST_SECRET = "this-is-a-test-secret-key-32chars!";
+
+const MYSQL_HOST = Deno.env.get("MYSQL_HOST") ?? "127.0.0.1";
+const MYSQL_PORT = Number(Deno.env.get("MYSQL_PORT") ?? "3307");
+const MYSQL_USER = Deno.env.get("MYSQL_USER") ?? "root";
+const MYSQL_PASSWORD = Deno.env.get("MYSQL_PASSWORD") ?? "root";
+const MYSQL_DATABASE = Deno.env.get("MYSQL_DATABASE") ?? "fresh_session";
+const MYSQL_TABLE = Deno.env.get("MYSQL_TABLE") ?? "sessions_mod_test";
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function uniqueTableName(prefix: string): string {
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  return `${prefix}_${suffix}`;
+}
+
+type MysqlExecutor = {
+  query: (sql: string, params?: unknown[]) => Promise<[unknown, unknown]>;
+  end: () => Promise<void>;
+};
+
+type MysqlPool = MysqlExecutor;
+
+async function ensureTable(
+  executor: MysqlExecutor,
+  tableName: string,
+): Promise<void> {
+  await executor.query(
+    `
+    CREATE TABLE IF NOT EXISTS ${tableName} (
+      session_id VARCHAR(36) PRIMARY KEY,
+      data TEXT NOT NULL,
+      expires_at DATETIME NULL
+    );
+  `,
+  );
+
+  try {
+    await executor.query(
+      `CREATE INDEX IF NOT EXISTS idx_${tableName}_expires_at ON ${tableName}(expires_at);`,
+    );
+  } catch {
+    // Ignore if the index already exists or IF NOT EXISTS is unsupported
+  }
+}
+
+async function clearTable(
+  executor: MysqlExecutor,
+  tableName: string,
+): Promise<void> {
+  await executor.query(`DELETE FROM ${tableName}`);
+}
+
+async function withSqlStore<T>(
+  fn: (store: SqlSessionStore) => Promise<T>,
+): Promise<T> {
+  let pool: MysqlPool | undefined;
+  const maxAttempts = 30;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const candidate = mysql.createPool({
+      host: MYSQL_HOST,
+      port: MYSQL_PORT,
+      user: MYSQL_USER,
+      password: MYSQL_PASSWORD,
+      database: MYSQL_DATABASE,
+    }) as unknown as MysqlPool;
+
+    try {
+      await candidate.query("SELECT 1");
+      pool = candidate;
+      break;
+    } catch {
+      await candidate.end().catch(() => {});
+      await delay(1000);
+    }
+  }
+
+  if (!pool) {
+    throw new Error("Failed to connect to MySQL after multiple attempts.");
+  }
+
+  const tableName = uniqueTableName(MYSQL_TABLE);
+  await ensureTable(pool, tableName);
+  await clearTable(pool, tableName);
+
+  const sqlClient = {
+    execute: async (sql: string, params: unknown[] = []) => {
+      const [rows] = await pool.query(sql, params);
+      return {
+        rows: Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [],
+      };
+    },
+  };
+
+  const sqlStore = new SqlSessionStore({ client: sqlClient, tableName });
+
+  try {
+    return await fn(sqlStore);
+  } finally {
+    await pool.end();
+  }
+}
 
 Deno.test("use cookie store", async () => {
   const store = new CookieSessionStore();
@@ -110,20 +213,8 @@ Deno.test("use kv store", async () => {
   kv.close();
 });
 
-Deno.test("use redis store (ioredis-mock)", async () => {
-  const { default: RedisMock } = await import("ioredis-mock");
-  // deno-lint-ignore no-explicit-any
-  const redisMock = new (RedisMock as any)();
-
-  // Adapter to match RedisClient interface
-  const redisClient: RedisClient = {
-    get: (key: string) => redisMock.get(key),
-    set: (key: string, value: string, options?: { ex?: number }) =>
-      options?.ex
-        ? redisMock.set(key, value, "EX", options.ex)
-        : redisMock.set(key, value),
-    del: (key: string) => redisMock.del(key),
-  };
+Deno.test("use redis store", async () => {
+  const redisClient = await createRedisClient();
 
   const store = new RedisSessionStore({ client: redisClient });
 
@@ -162,51 +253,61 @@ Deno.test("use redis store (ioredis-mock)", async () => {
 
     assertEquals(await res.text(), "user123");
   }
+  await redisClient.flushall();
+  await redisClient.close();
 });
 
-Deno.test("use sql store (mock)", async () => {
-  const sqlClient = new MockSqlClient();
-  const sqlStore = new SqlSessionStore({ client: sqlClient });
+Deno.test({
+  name: "use sql store (mysql)",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  fn: async () => {
+    await withSqlStore(async (sqlStore) => {
+    const sessionSaveRes = await (async () => {
+      const handler = new App<State>()
+        .use(session(sqlStore, TEST_SECRET))
+        .get("/", (ctx) => {
+          ctx.state.session.set("userId", "user123");
+          return new Response("Hello, World!");
+        }).handler();
+      const req = new Request("http://localhost");
+      const res = await handler(req);
 
-  const sessionSaveRes = await (async () => {
-    const handler = new App<State>()
-      .use(session(sqlStore, TEST_SECRET))
-      .get("/", (ctx) => {
-        ctx.state.session.set("userId", "user123");
-        return new Response("Hello, World!");
-      }).handler();
-    const req = new Request("http://localhost");
-    const res = await handler(req);
+      assertEquals(await res.text(), "Hello, World!");
 
-    assertEquals(await res.text(), "Hello, World!");
+      return res;
+    })();
 
-    return res;
-  })();
+    const sessionCookie = extractSessionCookie(sessionSaveRes);
 
-  const sessionCookie = extractSessionCookie(sessionSaveRes);
+    {
+      const handler = new App<State>()
+        .use(session(sqlStore, TEST_SECRET))
+        .get("/get", (ctx) => {
+          const userId = ctx.state.session.get("userId") as string | undefined;
+          return new Response(userId ?? "No User");
+        })
+        .handler();
 
-  {
-    const handler = new App<State>()
-      .use(session(sqlStore, TEST_SECRET))
-      .get("/get", (ctx) => {
-        const userId = ctx.state.session.get("userId") as string | undefined;
-        return new Response(userId ?? "No User");
-      })
-      .handler();
+      const req = new Request("http://localhost/get", {
+        headers: {
+          "Cookie": `fresh_session=${sessionCookie}`,
+        },
+      });
+      const res = await handler(req);
 
-    const req = new Request("http://localhost/get", {
-      headers: {
-        "Cookie": `fresh_session=${sessionCookie}`,
-      },
+      assertEquals(await res.text(), "user123");
+    }
     });
-    const res = await handler(req);
-
-    assertEquals(await res.text(), "user123");
-  }
+  },
 });
 
-Deno.test("flash message: set and get on next request", async () => {
-  const store = new MemorySessionStore();
+Deno.test({
+  name: "flash message: set and get on next request",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  fn: async () => {
+    const store = new MemorySessionStore();
 
   // First request: Set flash message
   const firstResponse = await (async () => {
@@ -276,6 +377,7 @@ Deno.test("flash message: set and get on next request", async () => {
   const thirdData = await thirdResponse.json();
   assertEquals(thirdData.message, undefined);
   assertEquals(thirdData.hasMessage, false);
+  },
 });
 
 Deno.test("flash message: does not affect regular session data", async () => {

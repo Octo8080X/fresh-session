@@ -30,6 +30,10 @@ Sample app notes:
 - `sample/session.ts` uses `MemorySessionStore`
 - `sample/session_cookie.ts` shows the cookie store pattern
 - `sample/session_kv.ts` shows the Deno KV store pattern
+- `sample/session_redis.ts` shows the Redis store pattern
+
+Redis sample notes:
+- Uses `REDIS_HOST` and `REDIS_PORT` (defaults: `127.0.0.1:6379`)
 
 ### 1. Create a session middleware
 
@@ -138,23 +142,19 @@ For distributed environments with Redis.
 
 ```ts ignore
 import { type RedisClient, RedisSessionStore } from "./mod.ts";
-import { connect } from "npm:ioredis";
+import { connect } from "jsr:@db/redis";
 
-const redis = new Redis({
-  host: "localhost",
+const redis = await connect({
+  hostname: "127.0.0.1",
   port: 6379,
 });
 
 // Adapt to RedisClient interface
 const client: RedisClient = {
   get: (key) => redis.get(key),
-  set: (key, value, options) => {
-    if (options?.ex) {
-      return redis.set(key, value, "EX", options.ex).then(() => {});
-    }
-    return redis.set(key, value).then(() => {});
-  },
-  del: (key) => redis.del(key).then(() => {}),
+  set: (key, value, options) =>
+    redis.set(key, value, options?.ex ? { ex: options.ex } : undefined),
+  del: (key) => redis.del(key),
 };
 
 const store = new RedisSessionStore({ client, keyPrefix: "session:" });
@@ -169,9 +169,7 @@ For applications using relational databases.
 CREATE TABLE sessions (
   session_id VARCHAR(36) PRIMARY KEY,
   data TEXT NOT NULL,
-  expires_at DATETIME NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  expires_at DATETIME NULL
 );
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 ```

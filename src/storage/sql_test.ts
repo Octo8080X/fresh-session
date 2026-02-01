@@ -1,261 +1,282 @@
 import { assertEquals, assertExists } from "@std/assert";
 import { type SqlClient, SqlSessionStore } from "./sql.ts";
+import mysql from "mysql2/promise";
 
-/**
- * Mock SQL client for testing
- * Simulates SQL datetime format (YYYY-MM-DD HH:MM:SS)
- */
-export class MockSqlClient implements SqlClient {
-  private store = new Map<
-    string,
-    { data: string; expires_at: string | null }
-  >();
+const MYSQL_HOST = Deno.env.get("MYSQL_HOST") ?? "127.0.0.1";
+const MYSQL_PORT = Number(Deno.env.get("MYSQL_PORT") ?? "3307");
+const MYSQL_USER = Deno.env.get("MYSQL_USER") ?? "root";
+const MYSQL_PASSWORD = Deno.env.get("MYSQL_PASSWORD") ?? "root";
+const MYSQL_DATABASE = Deno.env.get("MYSQL_DATABASE") ?? "fresh_session";
+const MYSQL_TABLE = Deno.env.get("MYSQL_TABLE") ?? "sessions";
 
-  execute(
-    sql: string,
-    params?: unknown[],
-  ): Promise<{ rows?: Record<string, unknown>[] }> {
-    // SELECT
-    if (sql.includes("SELECT")) {
-      const sessionId = params?.[0] as string;
-      const entry = this.store.get(sessionId);
-      if (!entry) {
-        return Promise.resolve({ rows: [] });
-      }
-      // MySQL expects expires in ISO format
-      return Promise.resolve({
-        rows: [{
-          data: entry.data,
-          expires_at: entry.expires_at
-            ? entry.expires_at.replace(" ", "T") + "Z"
-            : null,
-        }],
-      });
-    }
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-    // INSERT ... ON DUPLICATE KEY UPDATE
-    if (sql.includes("INSERT")) {
-      const sessionId = params?.[0] as string;
-      const data = params?.[1] as string;
-      const expiresAt = params?.[2] as string | null;
-      this.store.set(sessionId, { data, expires_at: expiresAt });
-      return Promise.resolve({});
-    }
+function uniqueTableName(prefix: string): string {
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  return `${prefix}_${suffix}`;
+}
 
-    // DELETE
-    if (sql.includes("DELETE") && sql.includes("session_id")) {
-      const sessionId = params?.[0] as string;
-      this.store.delete(sessionId);
-      return Promise.resolve({});
-    }
+function sqlTest(
+  name: string,
+  fn: () => Promise<void>,
+): void {
+  Deno.test({
+    name,
+    sanitizeResources: false,
+    sanitizeOps: false,
+    fn,
+  });
+}
 
-    // DELETE expired (cleanup)
-    if (sql.includes("DELETE") && sql.includes("NOW()")) {
-      const now = new Date();
-      for (const [key, value] of this.store.entries()) {
-        if (value.expires_at) {
-          // Parse MySQL format
-          const expiresAt = new Date(value.expires_at.replace(" ", "T") + "Z");
-          if (expiresAt < now) {
-            this.store.delete(key);
-          }
-        }
-      }
-      return Promise.resolve({});
-    }
+type MysqlExecutor = {
+  query: (sql: string, params?: unknown[]) => Promise<[unknown, unknown]>;
+};
 
-    return Promise.resolve({});
-  }
+type MysqlPool = MysqlExecutor & { end: () => Promise<void> };
 
-  // Test helper
-  clear(): void {
-    this.store.clear();
+async function ensureTable(
+  executor: MysqlExecutor,
+  tableName: string,
+): Promise<void> {
+  await executor.query(
+    `
+    CREATE TABLE IF NOT EXISTS ${tableName} (
+      session_id VARCHAR(36) PRIMARY KEY,
+      data TEXT NOT NULL,
+      expires_at DATETIME NULL
+    );
+  `,
+  );
+
+  try {
+    await executor.query(
+      `CREATE INDEX IF NOT EXISTS idx_${tableName}_expires_at ON ${tableName}(expires_at);`,
+    );
+  } catch {
+    // Ignore if the index already exists or IF NOT EXISTS is unsupported
   }
 }
 
-Deno.test("SqlSessionStore: load with undefined cookie creates new session", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
+async function clearTable(
+  executor: MysqlExecutor,
+  tableName: string,
+): Promise<void> {
+  await executor.query(`DELETE FROM ${tableName}`);
+}
 
-  const result = await store.load(undefined);
+async function withStore<T>(
+  tableName: string,
+  fn: (store: SqlSessionStore) => Promise<T>,
+): Promise<T> {
+  let pool: MysqlPool | undefined;
+  const maxAttempts = 30;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const candidate = mysql.createPool({
+      host: MYSQL_HOST,
+      port: MYSQL_PORT,
+      user: MYSQL_USER,
+      password: MYSQL_PASSWORD,
+      database: MYSQL_DATABASE,
+    }) as unknown as MysqlPool;
 
-  assertExists(result.sessionId);
-  assertEquals(result.data, {});
-  assertEquals(result.isNew, true);
-});
+    try {
+      await candidate.query("SELECT 1");
+      pool = candidate;
+      break;
+    } catch {
+      await candidate.end().catch(() => {});
+      await delay(1000);
+    }
+  }
 
-Deno.test("SqlSessionStore: load with non-existent sessionId creates new session", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
+  if (!pool) {
+    throw new Error("Failed to connect to MySQL after multiple attempts.");
+  }
 
-  const result = await store.load("non-existent-session");
-
-  assertExists(result.sessionId);
-  assertEquals(result.data, {});
-  assertEquals(result.isNew, true);
-});
-
-Deno.test("SqlSessionStore: save and load session data", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  // Create new session
-  const { sessionId } = await store.load(undefined);
-  const data = { userId: "user123", role: "admin" };
-
-  // Save data
-  const cookieValue = await store.save(sessionId, data);
-  assertEquals(cookieValue, sessionId);
-
-  // Load data
-  const result = await store.load(sessionId);
-  assertEquals(result.sessionId, sessionId);
-  assertEquals(result.data, data);
-  assertEquals(result.isNew, false);
-});
-
-Deno.test("SqlSessionStore: destroy removes session", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  // Create and save session
-  const { sessionId } = await store.load(undefined);
-  await store.save(sessionId, { foo: "bar" });
-
-  // Destroy
-  await store.destroy(sessionId);
-
-  // After destruction, treated as new session
-  const result = await store.load(sessionId);
-  assertEquals(result.isNew, true);
-  assertEquals(result.data, {});
-});
-
-Deno.test("SqlSessionStore: expired session returns new session", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  const sessionId = "expired-session";
-  const data = { temp: "data" };
-  const pastDate = new Date(Date.now() - 10000); // 10 seconds ago
-
-  await store.save(sessionId, data, pastDate);
-  const result = await store.load(sessionId);
-
-  // Treated as new session because expired
-  assertEquals(result.isNew, true);
-  assertEquals(result.data, {});
-});
-
-Deno.test("SqlSessionStore: non-expired session returns data", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  const sessionId = "valid-session";
-  const data = { active: true };
-  const futureDate = new Date(Date.now() + 60000); // 1 minute later
-
-  await store.save(sessionId, data, futureDate);
-  const result = await store.load(sessionId);
-
-  assertEquals(result.sessionId, sessionId);
-  assertEquals(result.data, data);
-  assertEquals(result.isNew, false);
-});
-
-Deno.test("SqlSessionStore: update existing session", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  const sessionId = "update-session";
-
-  await store.save(sessionId, { count: 1 });
-  await store.save(sessionId, { count: 2 });
-
-  const result = await store.load(sessionId);
-  assertEquals(result.data, { count: 2 });
-  assertEquals(result.isNew, false);
-});
-
-Deno.test("SqlSessionStore: session with no expiry persists", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  const sessionId = "persistent-session";
-  const data = { persistent: true };
-
-  await store.save(sessionId, data);
-  const result = await store.load(sessionId);
-
-  assertEquals(result.data, data);
-  assertEquals(result.isNew, false);
-});
-
-Deno.test("SqlSessionStore: custom table name", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client, tableName: "custom_sessions" });
-
-  const sessionId = "test-session";
-  const data = { custom: "table" };
-
-  await store.save(sessionId, data);
-  const result = await store.load(sessionId);
-
-  assertEquals(result.data, data);
-});
-
-Deno.test("SqlSessionStore: complex data types", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
-
-  const { sessionId } = await store.load(undefined);
-  const complexData = {
-    user: {
-      id: 123,
-      name: "Test User",
-      roles: ["admin", "user"],
+  const client: SqlClient = {
+    execute: async (sql: string, params: unknown[] = []) => {
+      const [rows] = await pool.query(sql, params);
+      return {
+        rows: Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [],
+      };
     },
-    settings: {
-      theme: "dark",
-      notifications: true,
-    },
-    lastLogin: "2024-01-01T00:00:00.000Z",
   };
 
-  await store.save(sessionId, complexData);
-  const result = await store.load(sessionId);
+  await ensureTable(pool, tableName);
+  await clearTable(pool, tableName);
 
-  assertEquals(result.data, complexData);
-  assertEquals(result.isNew, false);
+  const store = new SqlSessionStore({ client, tableName });
+
+  try {
+    return await fn(store);
+  } finally {
+    await pool.end();
+  }
+}
+
+sqlTest("SqlSessionStore: load with undefined cookie creates new session", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const result = await store.load(undefined);
+
+    assertExists(result.sessionId);
+    assertEquals(result.data, {});
+    assertEquals(result.isNew, true);
+  });
 });
 
-Deno.test("SqlSessionStore: cleanup removes expired sessions", async () => {
-  const client = new MockSqlClient();
-  const store = new SqlSessionStore({ client });
+sqlTest("SqlSessionStore: load with non-existent sessionId creates new session", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const result = await store.load("non-existent-session");
 
-  // Expired sessions
-  await store.save("expired-1", { a: 1 }, new Date(Date.now() - 10000));
-  await store.save("expired-2", { b: 2 }, new Date(Date.now() - 5000));
+    assertExists(result.sessionId);
+    assertEquals(result.data, {});
+    assertEquals(result.isNew, true);
+  });
+});
 
-  // Valid sessions
-  await store.save("valid-1", { c: 3 }, new Date(Date.now() + 60000));
-  await store.save("no-expiry", { d: 4 }); // No expiry
+sqlTest("SqlSessionStore: save and load session data", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const { sessionId } = await store.load(undefined);
+    const data = { userId: "user123", role: "admin" };
 
-  await store.cleanup();
+    const cookieValue = await store.save(sessionId, data);
+    assertEquals(cookieValue, sessionId);
 
-  // Expired sessions are deleted
-  const expired1 = await store.load("expired-1");
-  assertEquals(expired1.isNew, true);
+    const result = await store.load(sessionId);
+    assertEquals(result.sessionId, sessionId);
+    assertEquals(result.data, data);
+    assertEquals(result.isNew, false);
+  });
+});
 
-  const expired2 = await store.load("expired-2");
-  assertEquals(expired2.isNew, true);
+sqlTest("SqlSessionStore: destroy removes session", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const { sessionId } = await store.load(undefined);
+    await store.save(sessionId, { foo: "bar" });
 
-  // Valid sessions remain
-  const valid1 = await store.load("valid-1");
-  assertEquals(valid1.data, { c: 3 });
-  assertEquals(valid1.isNew, false);
+    await store.destroy(sessionId);
 
-  const noExpiry = await store.load("no-expiry");
-  assertEquals(noExpiry.data, { d: 4 });
-  assertEquals(noExpiry.isNew, false);
+    const result = await store.load(sessionId);
+    assertEquals(result.isNew, true);
+    assertEquals(result.data, {});
+  });
+});
+
+sqlTest("SqlSessionStore: expired session returns new session", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const sessionId = "expired-session";
+    const data = { temp: "data" };
+    const pastDate = new Date(Date.now() - 10000);
+
+    await store.save(sessionId, data, pastDate);
+    const result = await store.load(sessionId);
+
+    assertEquals(result.isNew, true);
+    assertEquals(result.data, {});
+  });
+});
+
+sqlTest("SqlSessionStore: non-expired session returns data", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const sessionId = "valid-session";
+    const data = { active: true };
+    const futureDate = new Date(Date.now() + 60000);
+
+    await store.save(sessionId, data, futureDate);
+    const result = await store.load(sessionId);
+
+    assertEquals(result.sessionId, sessionId);
+    assertEquals(result.data, data);
+    assertEquals(result.isNew, false);
+  });
+});
+
+sqlTest("SqlSessionStore: update existing session", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const sessionId = "update-session";
+
+    await store.save(sessionId, { count: 1 });
+    await store.save(sessionId, { count: 2 });
+
+    const result = await store.load(sessionId);
+    assertEquals(result.data, { count: 2 });
+    assertEquals(result.isNew, false);
+  });
+});
+
+sqlTest("SqlSessionStore: session with no expiry persists", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const sessionId = "persistent-session";
+    const data = { persistent: true };
+
+    await store.save(sessionId, data);
+    const result = await store.load(sessionId);
+
+    assertEquals(result.data, data);
+    assertEquals(result.isNew, false);
+  });
+});
+
+sqlTest("SqlSessionStore: custom table name", async () => {
+  await withStore(uniqueTableName("custom_sessions"), async (store) => {
+    const sessionId = "test-session";
+    const data = { custom: "table" };
+
+    await store.save(sessionId, data);
+    const result = await store.load(sessionId);
+
+    assertEquals(result.data, data);
+  });
+});
+
+sqlTest("SqlSessionStore: complex data types", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    const { sessionId } = await store.load(undefined);
+    const complexData = {
+      user: {
+        id: 123,
+        name: "Test User",
+        roles: ["admin", "user"],
+      },
+      settings: {
+        theme: "dark",
+        notifications: true,
+      },
+      lastLogin: "2024-01-01T00:00:00.000Z",
+    };
+
+    await store.save(sessionId, complexData);
+    const result = await store.load(sessionId);
+
+    assertEquals(result.data, complexData);
+    assertEquals(result.isNew, false);
+  });
+});
+
+sqlTest("SqlSessionStore: cleanup removes expired sessions", async () => {
+  await withStore(uniqueTableName(MYSQL_TABLE), async (store) => {
+    await store.save("expired-1", { a: 1 }, new Date(Date.now() - 10000));
+    await store.save("expired-2", { b: 2 }, new Date(Date.now() - 5000));
+
+    await store.save("valid-1", { c: 3 }, new Date(Date.now() + 60000));
+    await store.save("no-expiry", { d: 4 });
+
+    await store.cleanup();
+
+    const expired1 = await store.load("expired-1");
+    assertEquals(expired1.isNew, true);
+
+    const expired2 = await store.load("expired-2");
+    assertEquals(expired2.isNew, true);
+
+    const valid1 = await store.load("valid-1");
+    assertEquals(valid1.data, { c: 3 });
+    assertEquals(valid1.isNew, false);
+
+    const noExpiry = await store.load("no-expiry");
+    assertEquals(noExpiry.data, { d: 4 });
+    assertEquals(noExpiry.isNew, false);
+  });
 });

@@ -7,19 +7,22 @@
     "sample": "deno run -EN --watch sample/main.ts",
     "sample:memory": "deno run -EN --watch sample/main.ts memory",
     "sample:cookie": "deno run -EN --watch sample/main.ts cookie",
+    "sample:redis": "deno run -A scripts/with-resource.ts -- deno run -EN --watch sample/main.ts redis",
     "sample:kv": "deno run -EN --watch sample/main.ts kv",
-    "test": "deno test -E",
-    "test:doc": "deno test --doc -E"
+    "sample:mysql": "deno run -A scripts/with-resource.ts -- deno run -EN --watch sample/main.ts mysql",
+    "test": "deno run -A scripts/with-resource.ts -- deno test -EN",
+    "test:doc": "deno run -A scripts/with-resource.ts -- deno test --doc -EN"
   },
   "test": {
     "include": ["mod_test.ts", "src/**/*_test.ts"]
   },
   "license": "MIT",
   "imports": {
+    "@db/redis": "jsr:@db/redis@^0.40.0",
     "@fresh/core": "jsr:@fresh/core@^2.2.0",
     "@std/assert": "jsr:@std/assert@1",
     "@std/http/cookie": "jsr:@std/http@1/cookie",
-    "ioredis-mock": "npm:ioredis-mock@^8.13.1",
+    "mysql2": "npm:mysql2@^3.16.2",
     "preact": "npm:preact@^10.28.3"
   },
   "unstable": [

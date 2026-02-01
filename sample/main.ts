@@ -2,6 +2,8 @@ import { App, createDefine, staticFiles } from "@fresh/core";
 import { memorySessionMiddleware } from "./session_memory.ts";
 import { cookieSessionMiddleware } from "./session_cookie.ts";
 import { kvSessionMiddleware } from "./session_kv.ts";
+import { redisSessionMiddleware } from "./session_redis.ts";
+import { mysqlSessionMiddleware } from "./session_mysql.ts";
 import { registerSessionDemoRoutes } from "./session_demo.tsx";
 import type { SessionState } from "../src/session.ts";
 
@@ -26,7 +28,7 @@ app.all("/.well-known/*", () => {
 let storeType = "memory";
 
 // Add session middleware
-switch(Deno.args[0]){
+switch (Deno.args[0]) {
   case("cookie"): {
     app.use(cookieSessionMiddleware);
     storeType = "cookie";
@@ -40,6 +42,16 @@ switch(Deno.args[0]){
   case("kv"): {
     app.use(kvSessionMiddleware);
     storeType = "kv";
+    break;
+  }
+  case("redis"): {
+    app.use(redisSessionMiddleware);
+    storeType = "redis";
+    break;
+  }
+  case("mysql"): {
+    app.use(mysqlSessionMiddleware);
+    storeType = "mysql";
     break;
   }
   default: {

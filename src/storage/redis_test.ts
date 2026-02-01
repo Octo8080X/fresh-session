@@ -1,69 +1,35 @@
 import { assertEquals, assertExists } from "@std/assert";
+import { connect } from "@db/redis";
 import { type RedisClient, RedisSessionStore } from "./redis.ts";
 
-type RedisMockLike = {
-  get: (key: string) => Promise<string | null>;
-  set: (
-    key: string,
-    value: string,
-    mode?: string,
-    ttl?: number,
-  ) => Promise<unknown>;
-  del: (key: string) => Promise<unknown>;
-  flushall: () => Promise<unknown>;
+type ConnectedRedisClient = RedisClient & {
+  flushall: () => Promise<void>;
+  close: () => Promise<void>;
 };
 
-let sharedRedisMockPromise: Promise<RedisMockLike> | undefined;
+export async function createRedisClient(): Promise<ConnectedRedisClient> {
+  const redisHost = Deno.env.get("REDIS_HOST") ?? "127.0.0.1";
+  const redisPort = Number(Deno.env.get("REDIS_PORT") ?? "6379");
+  const redis = await connect({ hostname: redisHost, port: redisPort });
 
-async function getSharedRedisMock(): Promise<RedisMockLike> {
-  if (!sharedRedisMockPromise) {
-    sharedRedisMockPromise = (async () => {
-      const { default: RedisMock } = await import("ioredis-mock");
-      const RedisMockCtor = RedisMock as unknown as new () => RedisMockLike;
-      return new RedisMockCtor();
-    })();
-  }
-  return await sharedRedisMockPromise;
-}
-
-/**
- * Adapt ioredis-mock to RedisClient interface
- */
-async function createMockRedisClient(): Promise<
-  RedisClient & {
-    flushall: () => Promise<void>;
-  }
-> {
-  const sharedRedisMock = await getSharedRedisMock();
   return {
-    async get(key: string): Promise<string | null> {
-      return await sharedRedisMock.get(key);
-    },
-    async set(
-      key: string,
-      value: string,
-      options?: { ex?: number },
-    ): Promise<void> {
-      if (options?.ex) {
-        await sharedRedisMock.set(key, value, "EX", options.ex);
-      } else {
-        await sharedRedisMock.set(key, value);
-      }
-    },
-    async del(key: string): Promise<void> {
-      await sharedRedisMock.del(key);
-    },
-    async flushall(): Promise<void> {
-      await sharedRedisMock.flushall();
+    get: (key: string) => redis.get(key),
+    set: (key: string, value: string, options?: { ex?: number }) =>
+      redis
+        .set(key, value, options?.ex ? { ex: options.ex } : undefined)
+        .then(() => {}),
+    del: (key: string) => redis.del(key).then(() => {}),
+    flushall: () => redis.flushdb().then(() => {}),
+    close: async () => {
+      await redis.close();
     },
   };
 }
 
 Deno.test({
   name: "RedisSessionStore: load with undefined cookie creates new session",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -74,6 +40,7 @@ Deno.test({
       assertEquals(result.isNew, true);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
@@ -81,9 +48,8 @@ Deno.test({
 Deno.test({
   name:
     "RedisSessionStore: load with non-existent sessionId creates new session",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -94,15 +60,15 @@ Deno.test({
       assertEquals(result.isNew, true);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: save and load session data",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -121,15 +87,15 @@ Deno.test({
       assertEquals(result.isNew, false);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: destroy removes session",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -146,15 +112,15 @@ Deno.test({
       assertEquals(result.data, {});
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: expired session returns new session",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -170,15 +136,15 @@ Deno.test({
       assertEquals(result.data, {});
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: non-expired session returns data",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -194,15 +160,15 @@ Deno.test({
       assertEquals(result.isNew, false);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: update existing session",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -216,15 +182,15 @@ Deno.test({
       assertEquals(result.isNew, false);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: session with no expiry persists",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -238,15 +204,15 @@ Deno.test({
       assertEquals(result.isNew, false);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: custom key prefix",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client, keyPrefix: "custom:" });
 
     try {
@@ -263,15 +229,15 @@ Deno.test({
       assertEquals(result.data, data);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: complex data types",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -296,15 +262,15 @@ Deno.test({
       assertEquals(result.isNew, false);
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });
 
 Deno.test({
   name: "RedisSessionStore: invalid JSON in Redis returns new session",
-  permissions: { env: true },
   fn: async () => {
-    const client = await createMockRedisClient();
+    const client = await createRedisClient();
     const store = new RedisSessionStore({ client });
 
     try {
@@ -317,6 +283,7 @@ Deno.test({
       assertEquals(result.data, {});
     } finally {
       await client.flushall();
+      await client.close();
     }
   },
 });

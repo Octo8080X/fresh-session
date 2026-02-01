@@ -1,4 +1,4 @@
-import { KvSessionStore, session } from "@octo8080x/fresh-session";
+import { KvSessionStore, session } from "@octo/fresh-session";
 import type { State } from "./main.ts";
 
 // KvSessionStore (persistent storage via Deno KV)

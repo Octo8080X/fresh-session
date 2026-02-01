@@ -1,4 +1,4 @@
-import { MemorySessionStore, session } from "@octo8080x/fresh-session";
+import { MemorySessionStore, session } from "@octo/fresh-session";
 import type { State } from "./main.ts";
 
 // MemorySessionStore (data lives in memory while server is running)

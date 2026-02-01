@@ -2,7 +2,7 @@ import {
   type RedisClient,
   RedisSessionStore,
   session,
-} from "@octo8080x/fresh-session";
+} from "@octo/fresh-session";
 import { connect } from "@db/redis";
 import type { State } from "./main.ts";
 

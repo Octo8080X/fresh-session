@@ -21,14 +21,14 @@ import {
   session,
   type SessionState,
   SqlSessionStore,
-} from "@octo8080x/fresh-session";
+} from "@octo/fresh-session";
 ```
 
 ## Quick Start
 
 Sample app notes:
 
-- `sample/session.ts` uses `MemorySessionStore`
+- `sample/session_memory.ts` uses `MemorySessionStore`
 - `sample/session_cookie.ts` shows the cookie store pattern
 - `sample/session_kv.ts` shows the Deno KV store pattern
 - `sample/session_redis.ts` shows the Redis store pattern
@@ -52,7 +52,7 @@ import {
   MemorySessionStore,
   session,
   type SessionState,
-} from "@octo8080x/fresh-session";
+} from "@octo/fresh-session";
 
 // Define your app state
 interface State extends SessionState {
@@ -120,7 +120,7 @@ session.rotate(); // Rotate session ID (recommended after login)
 Simple in-memory storage. Data is lost when the server restarts.
 
 ```ts ignore
-import { MemorySessionStore } from "jsr:@octo8080x/fresh-session";
+import { MemorySessionStore } from "@octo/fresh-session";
 
 const store = new MemorySessionStore();
 ```
@@ -132,7 +132,7 @@ Stores session data in the cookie itself. No server-side storage needed.
 > ⚠️ Cookie size limit is ~4KB. Use for small session data only.
 
 ```ts ignore
-import { CookieSessionStore } from "jsr:@octo8080x/fresh-session";
+import { CookieSessionStore } from "@octo/fresh-session";
 
 const store = new CookieSessionStore();
 ```
@@ -142,7 +142,7 @@ const store = new CookieSessionStore();
 Persistent storage using Deno KV. Recommended for Deno Deploy.
 
 ```ts ignore
-import { KvSessionStore } from "jsr:@octo8080x/fresh-session";
+import { KvSessionStore } from "@octo/fresh-session";
 
 const kv = await Deno.openKv();
 const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
@@ -153,7 +153,7 @@ const store = new KvSessionStore({ kv, keyPrefix: ["my_sessions"] });
 For distributed environments with Redis.
 
 ```ts ignore
-import { type RedisClient, RedisSessionStore } from "@octo8080x/fresh-session";
+import { type RedisClient, RedisSessionStore } from "@octo/fresh-session";
 import { connect } from "jsr:@db/redis";
 
 const redis = await connect({
@@ -178,17 +178,25 @@ const store = new RedisSessionStore({ client, keyPrefix: "session:" });
 For applications using relational databases.
 
 ```sql
--- Required table structure
+-- Required table structure (MySQL)
 CREATE TABLE sessions (
   session_id VARCHAR(36) PRIMARY KEY,
   data TEXT NOT NULL,
   expires_at DATETIME NULL
 );
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+
+-- PostgreSQL example
+CREATE TABLE sessions (
+  session_id VARCHAR(36) PRIMARY KEY,
+  data TEXT NOT NULL,
+  expires_at TIMESTAMP NULL
+);
+CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 ```
 
 ```ts ignore
-import { type SqlClient, SqlSessionStore } from "@octo8080x/fresh-session";
+import { type SqlClient, SqlSessionStore } from "@octo/fresh-session";
 
 // Adapt your SQL client to SqlClient interface
 const client: SqlClient = {
@@ -342,20 +350,6 @@ return new Response(null, {
 1. Make sure your secret key is at least 32 characters
 2. Check that `secure: false` is set for local development (non-HTTPS)
 3. Verify the session middleware is added before your routes
-
-### Double counting visits
-
-Browser DevTools can cause extra requests (e.g., `/.well-known/`). Add a filter
-for these:
-
-```ts ignore
-app.all("/.well-known/*", () => {
-  return new Response("{}", {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
-});
-```
 
 ## License
 

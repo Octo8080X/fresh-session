@@ -1,4 +1,4 @@
-import { session, SqlSessionStore } from "@octo8080x/fresh-session";
+import { session, SqlSessionStore } from "@octo/fresh-session";
 import { Pool } from "pg";
 import type { State } from "./main.ts";
 
@@ -18,7 +18,7 @@ const pool = new Pool({
   max: 4,
 });
 
-async function delay(ms: number): Promise<void> {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

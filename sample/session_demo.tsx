@@ -7,19 +7,31 @@ import type { State } from "./main.ts";
 export function registerSessionDemoRoutes(app: App<State>, storeType: string) {
   // GET / - Display demo page
   app.get("/", (ctx) => {
+    const accept = ctx.req.headers.get("accept") ?? "";
+    const fetchDest = ctx.req.headers.get("sec-fetch-dest");
+    const fetchMode = ctx.req.headers.get("sec-fetch-mode");
+    const fetchUser = ctx.req.headers.get("sec-fetch-user");
+    const isDocument = fetchDest === "document";
+    const isNavigate = fetchMode === "navigate";
+    const isUserNavigation = fetchUser === "?1";
+    const shouldCount = accept.includes("text/html") &&
+      (isUserNavigation || (fetchUser === null && (isNavigate || isDocument)));
+
     // Get visit count from session
     const visitCount = (ctx.state.session.get("visitCount") as number) ?? 0;
-    const newCount = visitCount + 1;
+    const newCount = shouldCount ? visitCount + 1 : visitCount;
 
     console.log(
       `[session-demo] visitCount: ${visitCount} -> ${newCount}, isNew: ${ctx.state.session.isNew()}`,
     );
 
-    // Save visit count to session
-    ctx.state.session.set("visitCount", newCount);
+    if (shouldCount) {
+      // Save visit count to session
+      ctx.state.session.set("visitCount", newCount);
 
-    // Save last visit time
-    ctx.state.session.set("lastVisit", new Date().toISOString());
+      // Save last visit time
+      ctx.state.session.set("lastVisit", new Date().toISOString());
+    }
 
     const lastVisit = ctx.state.session.get("lastVisit") as string ?? "None";
     const isNew = ctx.state.session.isNew();

@@ -1,4 +1,4 @@
-import { App, createDefine, staticFiles } from "@fresh/core";
+import { App, createDefine, staticFiles, type Middleware } from "@fresh/core";
 import { memorySessionMiddleware } from "./session_memory.ts";
 import { cookieSessionMiddleware } from "./session_cookie.ts";
 import { kvSessionMiddleware } from "./session_kv.ts";
@@ -15,49 +15,66 @@ export const app = new App<State>();
 
 app.use(staticFiles());
 
-let storeType = "memory";
-
-// Add session middleware
-switch (Deno.args[0]) {
-  case ("cookie"): {
-    app.use(cookieSessionMiddleware);
-    storeType = "cookie";
-    break;
-  }
-  case ("memory"): {
-    app.use(memorySessionMiddleware);
-    storeType = "memory";
-    break;
-  }
-  case ("kv"): {
-    app.use(kvSessionMiddleware);
-    storeType = "kv";
-    break;
-  }
-  case ("redis"): {
-    const { redisSessionMiddleware } = await import("./session_redis.ts");
-    app.use(redisSessionMiddleware);
-    storeType = "redis";
-    break;
-  }
-  case ("mysql"): {
-    const { mysqlSessionMiddleware } = await import("./session_mysql.ts");
-    app.use(mysqlSessionMiddleware);
-    storeType = "mysql";
-    break;
-  }
-  case ("postgres"): {
-    const { postgresSessionMiddleware } = await import(
-      "./session_postgres.ts"
-    );
-    app.use(postgresSessionMiddleware);
-    storeType = "postgres";
-    break;
-  }
-  default: {
-    app.use(memorySessionMiddleware);
+// select session middleware
+async function selectSessionMiddleware(
+  sessionType?: string,
+): Promise<{ storeType: string; sessionMiddleware: Middleware<State> }> {
+  switch (sessionType) {
+    case ("cookie"): {
+      return {
+        storeType: "cookie",
+        sessionMiddleware: cookieSessionMiddleware,
+      };
+    }
+    case ("memory"): {
+      return {
+        storeType: "memory",
+        sessionMiddleware: memorySessionMiddleware,
+      };
+    }
+    case ("kv"): {
+      return {
+        storeType: "kv",
+        sessionMiddleware: kvSessionMiddleware,
+      };
+    }
+    case ("redis"): {
+      const { redisSessionMiddleware } = await import("./session_redis.ts");
+      return {
+        storeType: "redis",
+        sessionMiddleware: redisSessionMiddleware,
+      };
+    }
+    case ("mysql"): {
+      const { mysqlSessionMiddleware } = await import("./session_mysql.ts");
+      return {
+        storeType: "mysql",
+        sessionMiddleware: mysqlSessionMiddleware,
+      };
+    }
+    case ("postgres"): {
+      const { postgresSessionMiddleware } = await import(
+        "./session_postgres.ts"
+      );
+      return {
+        storeType: "postgres",
+        sessionMiddleware: postgresSessionMiddleware,
+      };
+    }
+    default: {
+      return {
+        storeType: "memory",
+        sessionMiddleware: memorySessionMiddleware,
+      };
+    }
   }
 }
+
+const { storeType, sessionMiddleware } = await selectSessionMiddleware(
+  Deno.args[0],
+);
+
+app.use(sessionMiddleware);
 
 const exampleLoggerMiddleware = define.middleware((ctx) => {
   console.log(`${ctx.req.method} ${ctx.req.url}`);

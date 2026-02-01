@@ -1,4 +1,3 @@
-/// <reference lib="deno.unstable" />
 // Deno KV storage implementation
 import type { ISessionStore, LoadResult, SessionData } from "../types.ts";
 

@@ -12,6 +12,10 @@ Dead simple cookie-based session for [Deno Fresh v2](https://fresh.deno.dev).
 
 ## Installation
 
+```sh
+deno add jsr:@octo/fresh-session
+```
+
 ```ts
 import {
   CookieSessionStore,
